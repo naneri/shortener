@@ -16,7 +16,6 @@ var lastUrlId int
 var storage map[string]string
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
-
 	if r.URL.Path != "/" {
 		fmt.Printf("GET request to %s \n", r.URL)
 		if r.Method != http.MethodGet {
@@ -28,12 +27,11 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		id := split[1]
 
 		if val, ok := storage[id]; ok {
-			w.Header().Set("Location", storage[id])
+			w.Header().Set("Location", val)
 			w.WriteHeader(http.StatusTemporaryRedirect)
-			w.Write([]byte(val))
 			return
 		} else {
-			fmt.Println("URL not found \n")
+			fmt.Println("URL not found")
 			http.Error(w, "The URL not found", http.StatusNotFound)
 			return
 		}
@@ -58,13 +56,15 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 
 	lastUrlId++
+	if storage == nil {
+		storage = make(map[string]string)
+	}
 	storage[strconv.Itoa(lastUrlId)] = string(body)
 
 	w.Write([]byte(fmt.Sprintf("http://localhost:8080/%d", lastUrlId)))
 }
 
 func main() {
-	storage = make(map[string]string)
 	// маршрутизация запросов обработчику
 	http.HandleFunc("/", indexHandler)
 	//http.HandleFunc()
