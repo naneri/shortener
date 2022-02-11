@@ -24,9 +24,8 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		id := r.URL.Path[1:]
 
 		if val, ok := storage[id]; ok {
-			w.Header().Set("Location", val)
 			w.WriteHeader(http.StatusTemporaryRedirect)
-			w.Write(nil)
+			w.Write([]byte(val))
 			return
 		} else {
 			http.Error(w, "The URL not found", http.StatusNotFound)
