@@ -53,5 +53,5 @@ func main() {
 	// запуск сервера с адресом localhost, порт 8080
 
 	fmt.Println("starting the server")
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe("localhost:8080", nil)
 }
