@@ -2,8 +2,10 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type mainRequest struct {
@@ -16,19 +18,22 @@ var storage map[string]string
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.URL.Path != "/" {
+		fmt.Printf("GET request to %s \n", r.URL)
 		if r.Method != http.MethodGet {
 			http.Error(w, "Only POST requests are allowed!", http.StatusMethodNotAllowed)
 			return
 		}
 
-		id := r.URL.Path[1:]
+		split := strings.Split(r.URL.Path, "/")
+		id := split[1]
 
 		if val, ok := storage[id]; ok {
-			w.Header().Set("Location", val)
 			w.WriteHeader(http.StatusTemporaryRedirect)
+			w.Header().Set("Location", val)
 			w.Write([]byte(val))
 			return
 		} else {
+			fmt.Println("URL not found \n")
 			http.Error(w, "The URL not found", http.StatusNotFound)
 			return
 		}
@@ -40,9 +45,12 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := r.ParseForm(); err != nil {
-		// если не заполнена, возвращаем код ошибки
-		http.Error(w, "Bad request", 401)
+	fmt.Printf("POST request to %s \n", r.URL)
+
+	body, err := io.ReadAll(r.Body)
+	// обрабатываем ошибку
+	if err != nil {
+		http.Error(w, err.Error(), 500)
 		return
 	}
 
@@ -50,7 +58,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 
 	lastUrlId++
-	storage[strconv.Itoa(lastUrlId)] = r.FormValue("url")
+	storage[strconv.Itoa(lastUrlId)] = string(body)
 
 	w.Write([]byte(fmt.Sprintf("http://localhost:8080/%d", lastUrlId)))
 }
