@@ -3,13 +3,15 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 )
 
 type mainRequest struct {
 	url string
 }
 
-var storage map[int]string
+var lastUrlId int
+var storage map[string]string
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 
@@ -19,9 +21,17 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		w.WriteHeader(http.StatusTemporaryRedirect)
-		w.Write([]byte("http://yandex.ru"))
-		return
+		id := r.URL.Path[1:]
+
+		if val, ok := storage[id]; ok {
+			w.WriteHeader(http.StatusTemporaryRedirect)
+			w.Write([]byte(val))
+			return
+		} else {
+			http.Error(w, "The URL not found", http.StatusNotFound)
+			return
+		}
+
 	}
 
 	if r.Method != http.MethodPost {
@@ -38,15 +48,14 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "plain/text")
 	w.WriteHeader(http.StatusCreated)
 
-	responseJson := map[string]string{
-		"id":           "1",
-		"shortenedUrl": "localhost:8080/1",
-	}
-	w.Write([]byte(responseJson["shortenedUrl"]))
+	lastUrlId++
+	storage[strconv.Itoa(lastUrlId)] = r.FormValue("url")
+
+	w.Write([]byte(fmt.Sprintf("localhost:8080/%d", lastUrlId)))
 }
 
 func main() {
-
+	storage = make(map[string]string)
 	// маршрутизация запросов обработчику
 	http.HandleFunc("/", indexHandler)
 	//http.HandleFunc()
