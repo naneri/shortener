@@ -52,7 +52,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	lastUrlId++
 	storage[strconv.Itoa(lastUrlId)] = r.FormValue("url")
 
-	w.Write([]byte(fmt.Sprintf("localhost:8080/%d", lastUrlId)))
+	w.Write([]byte(fmt.Sprintf("/%d", lastUrlId)))
 }
 
 func main() {
@@ -63,5 +63,5 @@ func main() {
 	// запуск сервера с адресом localhost, порт 8080
 
 	fmt.Println("starting the server")
-	http.ListenAndServe("localhost:8080", nil)
+	http.ListenAndServe(":8080", nil)
 }
