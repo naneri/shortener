@@ -28,8 +28,8 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		id := split[1]
 
 		if val, ok := storage[id]; ok {
+			w.Header().Set("Location", storage[id])
 			w.WriteHeader(http.StatusTemporaryRedirect)
-			w.Header().Set("Location", val)
 			w.Write([]byte(val))
 			return
 		} else {
