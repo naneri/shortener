@@ -52,7 +52,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	lastUrlId++
 	storage[strconv.Itoa(lastUrlId)] = r.FormValue("url")
 
-	w.Write([]byte(fmt.Sprintf("/%d", lastUrlId)))
+	w.Write([]byte(fmt.Sprintf("%d", lastUrlId)))
 }
 
 func main() {
