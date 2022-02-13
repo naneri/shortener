@@ -36,7 +36,7 @@ func Test_indexHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
 			// определяем хендлер
-			h := http.HandlerFunc(indexHandler)
+			h := http.HandlerFunc(postUrl)
 			// запускаем сервер
 			h.ServeHTTP(w, tt.request)
 			res := w.Result()
