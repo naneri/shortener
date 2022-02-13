@@ -82,7 +82,7 @@ var storage map[string]string
 //	c.String(http.StatusCreated, fmt.Sprintf("http://localhost:8080/%d", lastUrlId))
 //}
 func getUrl(w http.ResponseWriter, r *http.Request) {
-	urlId := chi.URLParam(r, "urlId")
+	urlId := chi.URLParam(r, "url")
 
 	if urlId == "" {
 		fmt.Println("URL not found")
@@ -125,7 +125,7 @@ func main() {
 	r := chi.NewRouter()
 
 	r.Post("/", postUrl)
-	r.Get("{url}", getUrl)
+	r.Get("/{url}", getUrl)
 
 	_ = http.ListenAndServe(":8080", r)
 	// маршрутизация запросов обработчику
