@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 )
+
+const shortLinkHost = "http://localhost:8080"
 
 var lastUrlId int
 var storage map[string]string
@@ -17,7 +20,8 @@ func main() {
 	r.Post("/", postUrl)
 	r.Get("/{url}", getUrl)
 
-	_ = http.ListenAndServe(":8080", r)
+	log.Println("Server started at port 8080")
+	http.ListenAndServe(":8080", r)
 }
 
 func getUrl(w http.ResponseWriter, r *http.Request) {
@@ -57,5 +61,6 @@ func postUrl(w http.ResponseWriter, r *http.Request) {
 	}
 	storage[strconv.Itoa(lastUrlId)] = string(body)
 
-	_, _ = w.Write([]byte(fmt.Sprintf("http://localhost:8080/%d", lastUrlId)))
+	shortLink := fmt.Sprintf("%s/%d", shortLinkHost, lastUrlId)
+	_, _ = w.Write([]byte(shortLink))
 }
