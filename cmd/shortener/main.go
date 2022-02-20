@@ -4,12 +4,25 @@ import (
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 )
 
+const shortLinkHost = "http://localhost:8080"
+
 var lastUrlId int
 var storage map[string]string
+
+func main() {
+	r := chi.NewRouter()
+
+	r.Post("/", postUrl)
+	r.Get("/{url}", getUrl)
+
+	log.Println("Server started at port 8080")
+	http.ListenAndServe(":8080", r)
+}
 
 func getUrl(w http.ResponseWriter, r *http.Request) {
 	urlId := chi.URLParam(r, "url")
@@ -48,21 +61,6 @@ func postUrl(w http.ResponseWriter, r *http.Request) {
 	}
 	storage[strconv.Itoa(lastUrlId)] = string(body)
 
-	_, _ = w.Write([]byte(fmt.Sprintf("http://localhost:8080/%d", lastUrlId)))
-}
-
-func main() {
-	r := chi.NewRouter()
-
-	r.Post("/", postUrl)
-	r.Get("/{url}", getUrl)
-
-	_ = http.ListenAndServe(":8080", r)
-	// маршрутизация запросов обработчику
-	//http.HandleFunc("/", indexHandler)
-	////http.HandleFunc()
-	//// запуск сервера с адресом localhost, порт 8080
-	//
-	//fmt.Println("starting the server")
-	//http.ListenAndServe("localhost:8080", nil)
+	shortLink := fmt.Sprintf("%s/%d", shortLinkHost, lastUrlId)
+	_, _ = w.Write([]byte(shortLink))
 }
