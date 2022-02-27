@@ -8,20 +8,23 @@ import (
 	"testing"
 )
 
+type testStruct struct {
+	name    string
+	request *http.Request
+	want    want
+}
+type want struct {
+	code        int
+	response    string
+	contentType string
+}
+
 func Test_indexHandler(t *testing.T) {
-	type want struct {
-		code        int
-		response    string
-		contentType string
-	}
 
 	postRequest := httptest.NewRequest("POST", "/", bytes.NewReader([]byte(`{"url" : "https://google.com"}`)))
+	jsonPostRequest := httptest.NewRequest("POST", "/api/shorten", bytes.NewReader([]byte(`{"url" : "https://google.com"}`)))
 
-	tests := []struct {
-		name    string
-		request *http.Request
-		want    want
-	}{
+	tests := []testStruct{
 		{
 			name:    "test posting url",
 			request: postRequest,
@@ -31,27 +34,38 @@ func Test_indexHandler(t *testing.T) {
 				contentType: "plain/text",
 			},
 		},
+		{
+			name:    "test '/api/shorten' ",
+			request: jsonPostRequest,
+			want: want{
+				code:        201,
+				response:    `{"result":"http://localhost:8080/2"}`,
+				contentType: "application/json",
+			},
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
 			// определяем хендлер
 			h := http.HandlerFunc(postUrl)
 			// запускаем сервер
-			h.ServeHTTP(w, tt.request)
+			h.ServeHTTP(w, test.request)
 			res := w.Result()
 
-			if res.StatusCode != tt.want.code {
-				t.Errorf("Expected status code %d, got %d", tt.want.code, w.Code)
+			if res.StatusCode != test.want.code {
+				t.Errorf("Expected status code %d, got %d", test.want.code, w.Code)
 			}
 
 			defer res.Body.Close()
 			resBody, err := io.ReadAll(res.Body)
+
 			if err != nil {
 				t.Fatal(err)
 			}
-			if string(resBody) != tt.want.response {
-				t.Errorf("Expected body %s, got %s", tt.want.response, w.Body.String())
+			if string(resBody) != test.want.response {
+				t.Errorf("Expected body %s, got %s", test.want.response, w.Body.String())
 			}
 		})
 	}

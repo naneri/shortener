@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/go-chi/chi/v5"
+	"github.com/naneri/shortener/cmd/dto"
 	"io"
 	"log"
 	"net/http"
@@ -18,10 +20,49 @@ func main() {
 	r := chi.NewRouter()
 
 	r.Post("/", postUrl)
+	r.Post("/api/shorten", shortenUrl)
 	r.Get("/{url}", getUrl)
 
 	log.Println("Server started at port 8080")
 	http.ListenAndServe(":8080", r)
+}
+
+func shortenUrl(w http.ResponseWriter, r *http.Request) {
+	type response struct {
+		Result string `json:"result"`
+	}
+	var requestBody dto.ShortenerDto
+
+	body, err := io.ReadAll(r.Body)
+	// обрабатываем ошибку
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	err = json.Unmarshal(body, &requestBody)
+
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	if storage == nil {
+		storage = make(map[string]string)
+	}
+	lastUrlId++
+	storage[strconv.Itoa(lastUrlId)] = requestBody.Url
+
+	responseStruct := response{Result: generateShortLink(lastUrlId)}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	fmt.Printf("%+v", responseStruct)
+	err = json.NewEncoder(w).Encode(responseStruct)
+
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
 }
 
 func getUrl(w http.ResponseWriter, r *http.Request) {
@@ -55,12 +96,16 @@ func postUrl(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "plain/text")
 	w.WriteHeader(http.StatusCreated)
 
-	lastUrlId++
 	if storage == nil {
 		storage = make(map[string]string)
 	}
+	lastUrlId++
 	storage[strconv.Itoa(lastUrlId)] = string(body)
 
-	shortLink := fmt.Sprintf("%s/%d", shortLinkHost, lastUrlId)
+	shortLink := generateShortLink(lastUrlId)
 	_, _ = w.Write([]byte(shortLink))
+}
+
+func generateShortLink(lastUrlId int) string {
+	return fmt.Sprintf("%s/%d", shortLinkHost, lastUrlId)
 }
