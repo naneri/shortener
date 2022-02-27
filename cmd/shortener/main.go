@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
 	"github.com/naneri/shortener/cmd/dto"
 	"io"
@@ -11,22 +12,42 @@ import (
 	"strconv"
 )
 
+type Config struct {
+	ServerAddress string `env:"SERVER_ADDRESS"`
+	BaseUrl       string `env:"BASE_URL"`
+}
+
 const shortLinkHost = "http://localhost:8080"
 
 var lastUrlId int
 var storage map[string]string
+var cfg Config
 
 func main() {
+	r := mainHandler()
+
+	log.Println("Server started at port 8080")
+	http.ListenAndServe(cfg.ServerAddress, r)
+}
+
+func mainHandler() *chi.Mux {
+	err := env.Parse(&cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if storage == nil {
+		storage = make(map[string]string)
+	}
+
 	r := chi.NewRouter()
 
 	r.Post("/", postUrl)
 	r.Post("/api/shorten", shortenUrl)
 	r.Get("/{url}", getUrl)
 
-	log.Println("Server started at port 8080")
-	http.ListenAndServe(":8080", r)
+	return r
 }
-
 func shortenUrl(w http.ResponseWriter, r *http.Request) {
 	type response struct {
 		Result string `json:"result"`
@@ -47,9 +68,6 @@ func shortenUrl(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if storage == nil {
-		storage = make(map[string]string)
-	}
 	lastUrlId++
 	storage[strconv.Itoa(lastUrlId)] = requestBody.Url
 
@@ -96,9 +114,6 @@ func postUrl(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "plain/text")
 	w.WriteHeader(http.StatusCreated)
 
-	if storage == nil {
-		storage = make(map[string]string)
-	}
 	lastUrlId++
 	storage[strconv.Itoa(lastUrlId)] = string(body)
 
@@ -107,5 +122,5 @@ func postUrl(w http.ResponseWriter, r *http.Request) {
 }
 
 func generateShortLink(lastUrlId int) string {
-	return fmt.Sprintf("%s/%d", shortLinkHost, lastUrlId)
+	return fmt.Sprintf("%s/%d", cfg.BaseUrl, lastUrlId)
 }

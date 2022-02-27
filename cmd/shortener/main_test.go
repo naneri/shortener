@@ -11,7 +11,6 @@ import (
 type testStruct struct {
 	name    string
 	request *http.Request
-	handler func(w http.ResponseWriter, r *http.Request)
 	want    want
 }
 type want struct {
@@ -29,7 +28,6 @@ func Test_indexHandler(t *testing.T) {
 		{
 			name:    "test posting url",
 			request: postRequest,
-			handler: postUrl,
 			want: want{
 				code:        201,
 				response:    "http://localhost:8080/1",
@@ -39,7 +37,6 @@ func Test_indexHandler(t *testing.T) {
 		{
 			name:    "test '/api/shorten' ",
 			request: jsonPostRequest,
-			handler: shortenUrl,
 			want: want{
 				code:        201,
 				response:    `{"result":"http://localhost:8080/2"}`,
@@ -52,7 +49,8 @@ func Test_indexHandler(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
 			// определяем хендлер
-			h := http.HandlerFunc(test.handler)
+			r := mainHandler()
+			h := http.HandlerFunc(r.ServeHTTP)
 			// запускаем сервер
 			h.ServeHTTP(w, test.request)
 			res := w.Result()
