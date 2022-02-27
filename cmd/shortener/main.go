@@ -13,7 +13,7 @@ import (
 )
 
 type Config struct {
-	ServerAddress string `env:"SERVER_ADDRESS" envDefault:"8080"`
+	ServerAddress string `env:"SERVER_ADDRESS" envDefault:":8080"`
 	BaseUrl       string `env:"BASE_URL" envDefault:"http://localhost:8080"`
 }
 
@@ -27,7 +27,7 @@ func main() {
 	r := mainHandler()
 
 	log.Println("Server started at port 8080")
-	http.ListenAndServe(":"+cfg.ServerAddress, r)
+	http.ListenAndServe(cfg.ServerAddress, r)
 }
 
 func mainHandler() *chi.Mux {
