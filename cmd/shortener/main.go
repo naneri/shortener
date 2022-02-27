@@ -27,7 +27,7 @@ func main() {
 	r := mainHandler()
 
 	log.Println("Server started at port 8080")
-	http.ListenAndServe(cfg.ServerAddress, r)
+	http.ListenAndServe(":"+cfg.ServerAddress, r)
 }
 
 func mainHandler() *chi.Mux {
