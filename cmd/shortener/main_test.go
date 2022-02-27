@@ -2,15 +2,16 @@ package main
 
 import (
 	"bytes"
-	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
 type testStruct struct {
 	name    string
 	request *http.Request
+	handler func(w http.ResponseWriter, r *http.Request)
 	want    want
 }
 type want struct {
@@ -28,6 +29,7 @@ func Test_indexHandler(t *testing.T) {
 		{
 			name:    "test posting url",
 			request: postRequest,
+			handler: postUrl,
 			want: want{
 				code:        201,
 				response:    "http://localhost:8080/1",
@@ -37,6 +39,7 @@ func Test_indexHandler(t *testing.T) {
 		{
 			name:    "test '/api/shorten' ",
 			request: jsonPostRequest,
+			handler: shortenUrl,
 			want: want{
 				code:        201,
 				response:    `{"result":"http://localhost:8080/2"}`,
@@ -49,7 +52,7 @@ func Test_indexHandler(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
 			// определяем хендлер
-			h := http.HandlerFunc(postUrl)
+			h := http.HandlerFunc(test.handler)
 			// запускаем сервер
 			h.ServeHTTP(w, test.request)
 			res := w.Result()
@@ -59,12 +62,12 @@ func Test_indexHandler(t *testing.T) {
 			}
 
 			defer res.Body.Close()
-			resBody, err := io.ReadAll(res.Body)
+			//resBody, err := io.ReadAll(res.Body)
 
-			if err != nil {
-				t.Fatal(err)
-			}
-			if string(resBody) != test.want.response {
+			//if err != nil {
+			//	t.Fatal(err)
+			//}
+			if strings.TrimSpace(w.Body.String()) != strings.TrimSpace(test.want.response) {
 				t.Errorf("Expected body %s, got %s", test.want.response, w.Body.String())
 			}
 		})
