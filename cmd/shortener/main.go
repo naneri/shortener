@@ -6,22 +6,20 @@ import (
 	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
 	"github.com/naneri/shortener/cmd/dto"
+	"github.com/naneri/shortener/internal/app/link"
 	"io"
 	"log"
 	"net/http"
-	"strconv"
 )
 
 type Config struct {
-	ServerAddress string `env:"SERVER_ADDRESS" envDefault:":8080"`
-	BaseUrl       string `env:"BASE_URL" envDefault:"http://localhost:8080"`
+	ServerAddress   string `env:"SERVER_ADDRESS" envDefault:":8080"`
+	BaseUrl         string `env:"BASE_URL" envDefault:"http://localhost:8080"`
+	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 }
 
-const shortLinkHost = "http://localhost:8080"
-
-var lastUrlId int
-var storage map[string]string
 var cfg Config
+var linkRepository link.Repository
 
 func main() {
 	r := mainHandler()
@@ -31,13 +29,10 @@ func main() {
 }
 
 func mainHandler() *chi.Mux {
+	linkRepository = link.Init()
 	err := env.Parse(&cfg)
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	if storage == nil {
-		storage = make(map[string]string)
 	}
 
 	r := chi.NewRouter()
@@ -48,6 +43,7 @@ func mainHandler() *chi.Mux {
 
 	return r
 }
+
 func shortenUrl(w http.ResponseWriter, r *http.Request) {
 	type response struct {
 		Result string `json:"result"`
@@ -68,8 +64,7 @@ func shortenUrl(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	lastUrlId++
-	storage[strconv.Itoa(lastUrlId)] = requestBody.Url
+	lastUrlId := linkRepository.AddLink(requestBody.Url)
 
 	responseStruct := response{Result: generateShortLink(lastUrlId)}
 	w.Header().Set("Content-Type", "application/json")
@@ -92,7 +87,7 @@ func getUrl(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if val, ok := storage[urlId]; ok {
+	if val, err := linkRepository.GetLink(urlId); err != nil {
 		w.Header().Set("Location", val)
 		w.WriteHeader(http.StatusTemporaryRedirect)
 		return
@@ -114,8 +109,7 @@ func postUrl(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "plain/text")
 	w.WriteHeader(http.StatusCreated)
 
-	lastUrlId++
-	storage[strconv.Itoa(lastUrlId)] = string(body)
+	lastUrlId := linkRepository.AddLink(string(body))
 
 	shortLink := generateShortLink(lastUrlId)
 	_, _ = w.Write([]byte(shortLink))
