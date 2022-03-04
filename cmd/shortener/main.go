@@ -87,7 +87,7 @@ func getUrl(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if val, err := linkRepository.GetLink(urlId); err != nil {
+	if val, err := linkRepository.GetLink(urlId); err == nil {
 		w.Header().Set("Location", val)
 		w.WriteHeader(http.StatusTemporaryRedirect)
 		return
