@@ -29,11 +29,13 @@ func main() {
 }
 
 func mainHandler() *chi.Mux {
-	linkRepository = link.InitMemoryRepo()
+
 	err := env.Parse(&cfg)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	linkRepository = link.InitFileRepo(cfg.FileStoragePath)
 
 	r := chi.NewRouter()
 

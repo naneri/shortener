@@ -2,7 +2,9 @@ package link
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strconv"
@@ -18,56 +20,74 @@ type Link struct {
 	Url string `json:"url"`
 }
 
+var filePath string
+
 func InitFileRepo(fileName string) *FileRepository {
+	filePath = fileName
 	repo := FileRepository{
 		lastUrlId: 0,
 		storage:   make(map[string]string),
 	}
 
-	defer os.Remove(fileName)
-	producer, err := NewProducer(fileName)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer producer.Close()
-
-	consumer, err := NewConsumer(fileName)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	defer consumer.Close()
+	readAllLinks(fileName, &repo)
 
 	return &repo
 }
 
-func readAllLinks(consumer consumer) {
+func readAllLinks(fileName string, repo *FileRepository) {
+	linkConsumer, err := NewConsumer(fileName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer linkConsumer.Close()
+
 	for {
-		readedEvent, err := consumer.ReadEvent()
+		readedLink, err := linkConsumer.ReadLink()
 		if err != nil {
-			log.Fatal(err)
+			if err == io.EOF {
+				fmt.Println("finished processing the file")
+				break
+			} else {
+				log.Fatal(err)
+			}
 		}
-		fmt.Println(readedEvent)
+
+		repo.storage[strconv.Itoa(readedLink.ID)] = readedLink.Url
 	}
 }
 
-func (repo FileRepository) AddLink(link string) int {
+func (repo *FileRepository) AddLink(link string) int {
 	repo.lastUrlId++
 	repo.storage[strconv.Itoa(repo.lastUrlId)] = link
 
+	if filePath != "" {
+		linkProducer, err := NewProducer(filePath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer linkProducer.Close()
+
+		newLink := Link{
+			ID:  repo.lastUrlId,
+			Url: link,
+		}
+
+		if err := linkProducer.WriteLink(&newLink); err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	return repo.lastUrlId
-	panic("implement me")
 }
 
-func (repo FileRepository) GetLink(urlId string) (string, error) {
-	panic("implement me")
+func (repo *FileRepository) GetLink(urlId string) (string, error) {
+	if val, ok := repo.storage[urlId]; ok {
+		return val, nil
+	} else {
+		return "", errors.New("record not found")
+	}
 }
-
-///*type Event struct {
-//	ID       uint    `json:"id"`
-//	CarModel string  `json:"car_model"`
-//	Price    float64 `json:"price"`
-//*/}
 
 type producer struct {
 	file    *os.File
@@ -88,6 +108,7 @@ func NewProducer(fileName string) (*producer, error) {
 func (p *producer) WriteLink(link *Link) error {
 	return p.encoder.Encode(&link)
 }
+
 func (p *producer) Close() error {
 	return p.file.Close()
 }
@@ -108,7 +129,7 @@ func NewConsumer(fileName string) (*consumer, error) {
 	}, nil
 }
 
-func (c *consumer) ReadEvent() (*Link, error) {
+func (c *consumer) ReadLink() (*Link, error) {
 	link := &Link{}
 	if err := c.decoder.Decode(&link); err != nil {
 		return nil, err
@@ -140,7 +161,7 @@ func main() {
 	//		log.Fatal(err)
 	//	}
 	//
-	//	readedEvent, err := consumer.ReadEvent()
+	//	readedEvent, err := consumer.ReadLink()
 	//	if err != nil {
 	//		log.Fatal(err)
 	//	}
