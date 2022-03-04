@@ -15,7 +15,7 @@ import (
 type Config struct {
 	ServerAddress   string `env:"SERVER_ADDRESS" envDefault:":8080"`
 	BaseUrl         string `env:"BASE_URL" envDefault:"http://localhost:8080"`
-	FileStoragePath string `env:"FILE_STORAGE_PATH"`
+	FileStoragePath string `env:"FILE_STORAGE_PATH" envDefault:""`
 }
 
 var cfg Config
@@ -31,6 +31,7 @@ func main() {
 func mainHandler() *chi.Mux {
 
 	err := env.Parse(&cfg)
+	cfg.FileStoragePath = ""
 	if err != nil {
 		log.Fatal(err)
 	}

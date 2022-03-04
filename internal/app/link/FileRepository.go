@@ -29,7 +29,9 @@ func InitFileRepo(fileName string) *FileRepository {
 		storage:   make(map[string]string),
 	}
 
-	readAllLinks(fileName, &repo)
+	if filePath != "" {
+		readAllLinks(fileName, &repo)
+	}
 
 	return &repo
 }
