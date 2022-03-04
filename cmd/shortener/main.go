@@ -31,7 +31,7 @@ func main() {
 func mainHandler() *chi.Mux {
 
 	err := env.Parse(&cfg)
-	cfg.FileStoragePath = ""
+
 	if err != nil {
 		log.Fatal(err)
 	}
