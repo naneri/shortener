@@ -29,7 +29,6 @@ func main() {
 }
 
 func mainHandler() *chi.Mux {
-
 	err := env.Parse(&cfg)
 
 	if err != nil {

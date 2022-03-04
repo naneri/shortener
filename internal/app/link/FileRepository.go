@@ -142,31 +142,3 @@ func (c *consumer) ReadLink() (*Link, error) {
 func (c *consumer) Close() error {
 	return c.file.Close()
 }
-
-func main() {
-	//fileName := "events.log"
-	//defer os.Remove(fileName)
-	//producer, err := NewProducer(fileName)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//defer producer.Close()
-	//consumer, err := NewConsumer(fileName)
-	//if err != nil {
-	//	log.Fatal(err)
-	//}
-	//
-	//defer consumer.Close()
-
-	//for _, event := range links {
-	//	if err := producer.WriteLink(event); err != nil {
-	//		log.Fatal(err)
-	//	}
-	//
-	//	readedEvent, err := consumer.ReadLink()
-	//	if err != nil {
-	//		log.Fatal(err)
-	//	}
-	//	fmt.Println(readedEvent)
-	//}
-}
