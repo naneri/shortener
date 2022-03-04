@@ -29,7 +29,7 @@ func main() {
 }
 
 func mainHandler() *chi.Mux {
-	linkRepository = link.Init()
+	linkRepository = link.InitMemoryRepo()
 	err := env.Parse(&cfg)
 	if err != nil {
 		log.Fatal(err)

@@ -10,7 +10,7 @@ type MemoryRepository struct {
 	storage   map[string]string
 }
 
-func Init() *MemoryRepository {
+func InitMemoryRepo() *MemoryRepository {
 	repo := MemoryRepository{
 		lastUrlId: 0,
 		storage:   make(map[string]string),

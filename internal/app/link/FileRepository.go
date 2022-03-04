@@ -5,13 +5,69 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 )
 
-type Event struct {
-	ID       uint    `json:"id"`
-	CarModel string  `json:"car_model"`
-	Price    float64 `json:"price"`
+type FileRepository struct {
+	lastUrlId int
+	storage   map[string]string
 }
+
+type Link struct {
+	ID  int    `json:"id"`
+	Url string `json:"url"`
+}
+
+func InitFileRepo(fileName string) *FileRepository {
+	repo := FileRepository{
+		lastUrlId: 0,
+		storage:   make(map[string]string),
+	}
+
+	defer os.Remove(fileName)
+	producer, err := NewProducer(fileName)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer producer.Close()
+
+	consumer, err := NewConsumer(fileName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer consumer.Close()
+
+	return &repo
+}
+
+func readAllLinks(consumer consumer) {
+	for {
+		readedEvent, err := consumer.ReadEvent()
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(readedEvent)
+	}
+}
+
+func (repo FileRepository) AddLink(link string) int {
+	repo.lastUrlId++
+	repo.storage[strconv.Itoa(repo.lastUrlId)] = link
+
+	return repo.lastUrlId
+	panic("implement me")
+}
+
+func (repo FileRepository) GetLink(urlId string) (string, error) {
+	panic("implement me")
+}
+
+///*type Event struct {
+//	ID       uint    `json:"id"`
+//	CarModel string  `json:"car_model"`
+//	Price    float64 `json:"price"`
+//*/}
 
 type producer struct {
 	file    *os.File
@@ -28,8 +84,9 @@ func NewProducer(fileName string) (*producer, error) {
 		encoder: json.NewEncoder(file),
 	}, nil
 }
-func (p *producer) WriteEvent(event *Event) error {
-	return p.encoder.Encode(&event)
+
+func (p *producer) WriteLink(link *Link) error {
+	return p.encoder.Encode(&link)
 }
 func (p *producer) Close() error {
 	return p.file.Close()
@@ -51,69 +108,42 @@ func NewConsumer(fileName string) (*consumer, error) {
 	}, nil
 }
 
-func (c *consumer) ReadEvent() (*Event, error) {
-	event := &Event{}
-	if err := c.decoder.Decode(&event); err != nil {
+func (c *consumer) ReadEvent() (*Link, error) {
+	link := &Link{}
+	if err := c.decoder.Decode(&link); err != nil {
 		return nil, err
 	}
-	return event, nil
+	return link, nil
 }
 
 func (c *consumer) Close() error {
 	return c.file.Close()
 }
 
-var events = []*Event{
-	{
-		ID:       1,
-		CarModel: "Lada",
-		Price:    400000,
-	},
-	{
-		ID:       2,
-		CarModel: "Mitsubishi",
-		Price:    650000,
-	},
-	{
-		ID:       3,
-		CarModel: "Toyota",
-		Price:    800000,
-	},
-	{
-		ID:       4,
-		CarModel: "BMW",
-		Price:    875000,
-	},
-	{
-		ID:       5,
-		CarModel: "Mercedes",
-		Price:    999999,
-	},
-}
-
 func main() {
-	fileName := "events.log"
-	defer os.Remove(fileName)
-	producer, err := NewProducer(fileName)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer producer.Close()
-	consumer, err := NewConsumer(fileName)
-	if err != nil {
-		log.Fatal(err)
-	}
+	//fileName := "events.log"
+	//defer os.Remove(fileName)
+	//producer, err := NewProducer(fileName)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//defer producer.Close()
+	//consumer, err := NewConsumer(fileName)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//
+	//defer consumer.Close()
 
-	defer consumer.Close()
-	for _, event := range events {
-		if err := producer.WriteEvent(event); err != nil {
-			log.Fatal(err)
-		}
-
-		readedEvent, err := consumer.ReadEvent()
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println(readedEvent)
-	}
+	//for _, event := range links {
+	//	if err := producer.WriteLink(event); err != nil {
+	//		log.Fatal(err)
+	//	}
+	//
+	//	readedEvent, err := consumer.ReadEvent()
+	//	if err != nil {
+	//		log.Fatal(err)
+	//	}
+	//	fmt.Println(readedEvent)
+	//}
 }
