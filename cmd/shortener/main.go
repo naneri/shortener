@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
@@ -34,6 +35,10 @@ func mainHandler() *chi.Mux {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	flag.StringVar(&cfg.ServerAddress, "a", ":8080", "default server Port")
+	flag.StringVar(&cfg.BaseUrl, "b", "http://localhost:8080", "base URL")
+	flag.StringVar(&cfg.FileStoragePath, "f", "", "file storage path")
 
 	linkRepository = link.InitFileRepo(cfg.FileStoragePath)
 
