@@ -25,7 +25,7 @@ var linkRepository link.Repository
 func main() {
 	r := mainHandler()
 
-	log.Println("Server started at port 8080")
+	log.Println("Server started at port " + cfg.ServerAddress)
 	http.ListenAndServe(cfg.ServerAddress, r)
 }
 
@@ -36,9 +36,10 @@ func mainHandler() *chi.Mux {
 		log.Fatal(err)
 	}
 
-	flag.StringVar(&cfg.ServerAddress, "a", ":8080", "default server Port")
-	flag.StringVar(&cfg.BaseUrl, "b", "http://localhost:8080", "base URL")
-	flag.StringVar(&cfg.FileStoragePath, "f", "", "file storage path")
+	flag.StringVar(&cfg.ServerAddress, "a", cfg.ServerAddress, "default server Port")
+	flag.StringVar(&cfg.BaseUrl, "b", cfg.BaseUrl, "base URL")
+	flag.StringVar(&cfg.FileStoragePath, "f", cfg.FileStoragePath, "file storage path")
+	flag.Parse()
 
 	linkRepository = link.InitFileRepo(cfg.FileStoragePath)
 
