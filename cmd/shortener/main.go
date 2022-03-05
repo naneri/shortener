@@ -36,9 +36,12 @@ func mainHandler() *chi.Mux {
 		log.Fatal(err)
 	}
 
-	flag.StringVar(&cfg.ServerAddress, "a", cfg.ServerAddress, "default server Port")
-	flag.StringVar(&cfg.BaseUrl, "b", cfg.BaseUrl, "base URL")
-	flag.StringVar(&cfg.FileStoragePath, "f", cfg.FileStoragePath, "file storage path")
+	if flag.Lookup("a") == nil {
+		flag.StringVar(&cfg.ServerAddress, "a", cfg.ServerAddress, "default server Port")
+		flag.StringVar(&cfg.BaseUrl, "b", cfg.BaseUrl, "base URL")
+		flag.StringVar(&cfg.FileStoragePath, "f", cfg.FileStoragePath, "file storage path")
+	}
+
 	flag.Parse()
 
 	linkRepository = link.InitFileRepo(cfg.FileStoragePath)
