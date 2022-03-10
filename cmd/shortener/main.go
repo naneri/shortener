@@ -48,6 +48,7 @@ func mainHandler() *chi.Mux {
 
 	r := chi.NewRouter()
 
+	r.Use(gzipMiddleware)
 	r.Post("/", postUrl)
 	r.Post("/api/shorten", shortenUrl)
 	r.Get("/{url}", getUrl)
