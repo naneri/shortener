@@ -8,7 +8,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/naneri/shortener/cmd/dto"
 	"github.com/naneri/shortener/internal/app/link"
-	"io"
 	"log"
 	"net/http"
 )
@@ -62,7 +61,7 @@ func shortenUrl(w http.ResponseWriter, r *http.Request) {
 	}
 	var requestBody dto.ShortenerDto
 
-	body, err := io.ReadAll(r.Body)
+	body, err := readBody(r)
 	// обрабатываем ошибку
 	if err != nil {
 		http.Error(w, err.Error(), 500)
@@ -111,7 +110,7 @@ func getUrl(w http.ResponseWriter, r *http.Request) {
 }
 
 func postUrl(w http.ResponseWriter, r *http.Request) {
-	body, err := io.ReadAll(r.Body)
+	body, err := readBody(r)
 	// обрабатываем ошибку
 	if err != nil {
 		http.Error(w, err.Error(), 500)
