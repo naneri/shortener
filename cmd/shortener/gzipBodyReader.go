@@ -2,7 +2,6 @@ package main
 
 import (
 	"compress/gzip"
-	"errors"
 	"io"
 	"net/http"
 )
@@ -13,8 +12,7 @@ func readBody(r *http.Request) ([]byte, error) {
 	if r.Header.Get(`Content-Encoding`) == `gzip` {
 		gz, err := gzip.NewReader(r.Body)
 		if err != nil {
-
-			return []byte{}, errors.New("error when reading the gzipped body")
+			return []byte{}, err
 		}
 		reader = gz
 		defer gz.Close()
@@ -24,7 +22,7 @@ func readBody(r *http.Request) ([]byte, error) {
 
 	body, err := io.ReadAll(reader)
 	if err != nil {
-		return []byte{}, errors.New("error when reading the gzipped body")
+		return []byte{}, err
 	}
 
 	return body, nil
