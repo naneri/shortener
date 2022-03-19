@@ -19,11 +19,11 @@ func InitMemoryRepo() *MemoryRepository {
 	return &repo
 }
 
-func (repo *MemoryRepository) AddLink(link string) int {
+func (repo *MemoryRepository) AddLink(link string) (int, error) {
 	repo.lastUrlId++
 	repo.storage[strconv.Itoa(repo.lastUrlId)] = link
 
-	return repo.lastUrlId
+	return repo.lastUrlId, nil
 }
 
 func (repo *MemoryRepository) GetLink(urlId string) (string, error) {

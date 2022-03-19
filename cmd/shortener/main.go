@@ -33,7 +33,7 @@ func mainHandler() *chi.Mux {
 	err := env.Parse(&cfg)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("unable to parse env vars: %v", err)
 	}
 
 	if flag.Lookup("a") == nil {
@@ -61,30 +61,22 @@ func shortenUrl(w http.ResponseWriter, r *http.Request) {
 	}
 	var requestBody dto.ShortenerDto
 
-	body, err := io.ReadAll(r.Body)
-	// обрабатываем ошибку
-	if err != nil {
-		http.Error(w, err.Error(), 500)
+	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+		log.Printf("io.ReadAll: %v\n", err)
+		http.Error(w, "unable to read request body", http.StatusBadRequest)
 		return
 	}
 
-	err = json.Unmarshal(body, &requestBody)
-
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-
-	lastUrlId := linkRepository.AddLink(requestBody.Url)
+	lastUrlId, _ := linkRepository.AddLink(requestBody.Url)
 
 	responseStruct := response{Result: generateShortLink(lastUrlId)}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	fmt.Printf("%+v", responseStruct)
-	err = json.NewEncoder(w).Encode(responseStruct)
+	err := json.NewEncoder(w).Encode(responseStruct)
 
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 }
@@ -113,14 +105,14 @@ func postUrl(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	// обрабатываем ошибку
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("content-type", "plain/text")
 	w.WriteHeader(http.StatusCreated)
 
-	lastUrlId := linkRepository.AddLink(string(body))
+	lastUrlId, _ := linkRepository.AddLink(string(body))
 
 	shortLink := generateShortLink(lastUrlId)
 	_, _ = w.Write([]byte(shortLink))
