@@ -60,11 +60,7 @@ func Test_indexHandler(t *testing.T) {
 			}
 
 			defer res.Body.Close()
-			//resBody, err := io.ReadAll(res.Body)
 
-			//if err != nil {
-			//	t.Fatal(err)
-			//}
 			if strings.TrimSpace(w.Body.String()) != strings.TrimSpace(test.want.response) {
 				t.Errorf("Expected body %s, got %s", test.want.response, w.Body.String())
 			}
