@@ -1,4 +1,4 @@
-package main
+package middleware
 
 import (
 	"compress/gzip"
@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func readBody(r *http.Request) ([]byte, error) {
+func ReadBody(r *http.Request) ([]byte, error) {
 	var reader io.Reader
 
 	if r.Header.Get(`Content-Encoding`) == `gzip` {

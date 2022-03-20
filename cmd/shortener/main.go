@@ -7,6 +7,7 @@ import (
 	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
 	"github.com/naneri/shortener/cmd/dto"
+	"github.com/naneri/shortener/cmd/shortener/middleware"
 	"github.com/naneri/shortener/internal/app/link"
 	"log"
 	"net/http"
@@ -16,6 +17,7 @@ type Config struct {
 	ServerAddress   string `env:"SERVER_ADDRESS" envDefault:":8080"`
 	BaseUrl         string `env:"BASE_URL" envDefault:"http://localhost:8080"`
 	FileStoragePath string `env:"FILE_STORAGE_PATH" envDefault:""`
+	EncryptionKey   string `env:"ENCRYPTION_KEY" envDefault:"kj990ask123"`
 }
 
 var cfg Config
@@ -47,7 +49,7 @@ func mainHandler() *chi.Mux {
 
 	r := chi.NewRouter()
 
-	r.Use(gzipMiddleware)
+	r.Use(middleware.GzipMiddleware)
 	r.Post("/", postUrl)
 	r.Post("/api/shorten", shortenUrl)
 	r.Get("/{url}", getUrl)
@@ -61,7 +63,7 @@ func shortenUrl(w http.ResponseWriter, r *http.Request) {
 	}
 	var requestBody dto.ShortenerDto
 
-	body, err := readBody(r)
+	body, err := middleware.ReadBody(r)
 	// обрабатываем ошибку
 	if err != nil {
 		http.Error(w, err.Error(), 500)
@@ -110,7 +112,7 @@ func getUrl(w http.ResponseWriter, r *http.Request) {
 }
 
 func postUrl(w http.ResponseWriter, r *http.Request) {
-	body, err := readBody(r)
+	body, err := middleware.ReadBody(r)
 	// обрабатываем ошибку
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
