@@ -20,26 +20,27 @@ type Link struct {
 	Url string `json:"url"`
 }
 
-var filePath string
+var fileStorage *os.File
 
-func InitFileRepo(fileName string) *FileRepository {
-	filePath = fileName
+func InitFileRepo(file *os.File) *FileRepository {
+	fileStorage = file
 	repo := FileRepository{
 		lastUrlId: 0,
 		storage:   make(map[string]string),
 	}
 
-	if filePath != "" {
-		readAllLinks(fileName, &repo)
+	if file != nil {
+		readAllLinks(file, &repo)
 	}
 
 	return &repo
 }
 
-func readAllLinks(fileName string, repo *FileRepository) {
-	linkConsumer, err := NewConsumer(fileName)
-	if err != nil {
-		log.Fatal(err)
+func readAllLinks(file *os.File, repo *FileRepository) {
+	linkConsumer, fileOpenErr := NewConsumer(file)
+
+	if fileOpenErr != nil {
+		log.Fatal(fileOpenErr)
 	}
 
 	defer linkConsumer.Close()
@@ -63,8 +64,8 @@ func (repo *FileRepository) AddLink(link string) (int, error) {
 	repo.lastUrlId++
 	repo.storage[strconv.Itoa(repo.lastUrlId)] = link
 
-	if filePath != "" {
-		linkProducer, err := NewProducer(filePath)
+	if fileStorage != nil {
+		linkProducer, err := NewProducer(fileStorage)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -96,11 +97,7 @@ type producer struct {
 	encoder *json.Encoder
 }
 
-func NewProducer(fileName string) (*producer, error) {
-	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0777)
-	if err != nil {
-		return nil, err
-	}
+func NewProducer(file *os.File) (*producer, error) {
 	return &producer{
 		file:    file,
 		encoder: json.NewEncoder(file),
@@ -120,11 +117,7 @@ type consumer struct {
 	decoder *json.Decoder
 }
 
-func NewConsumer(fileName string) (*consumer, error) {
-	file, err := os.OpenFile(fileName, os.O_RDONLY|os.O_CREATE, 0777)
-	if err != nil {
-		return nil, err
-	}
+func NewConsumer(file *os.File) (*consumer, error) {
 	return &consumer{
 		file:    file,
 		decoder: json.NewDecoder(file),

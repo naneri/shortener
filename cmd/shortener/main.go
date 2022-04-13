@@ -11,6 +11,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 )
 
 type Config struct {
@@ -44,7 +45,17 @@ func mainHandler() *chi.Mux {
 
 	flag.Parse()
 
-	linkRepository = link.InitFileRepo(cfg.FileStoragePath)
+	var file *os.File
+
+	if cfg.FileStoragePath != "" {
+		file, err = os.OpenFile(cfg.FileStoragePath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
+
+		if err != nil {
+			log.Fatal("error opening the file")
+		}
+	}
+
+	linkRepository = link.InitFileRepo(file)
 
 	r := chi.NewRouter()
 
