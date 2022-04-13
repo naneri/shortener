@@ -17,20 +17,13 @@ import (
 type Config struct {
 	ServerAddress   string `env:"SERVER_ADDRESS" envDefault:":8080"`
 	BaseUrl         string `env:"BASE_URL" envDefault:"http://localhost:8080"`
-	FileStoragePath string `env:"FILE_STORAGE_PATH" envDefault:""`
+	FileStoragePath string `env:"FILE_STORAGE_PATH" envDefault:"links.txt"`
 }
 
 var cfg Config
 var linkRepository link.Repository
 
 func main() {
-	r := mainHandler()
-
-	log.Println("Server started at port " + cfg.ServerAddress)
-	http.ListenAndServe(cfg.ServerAddress, r)
-}
-
-func mainHandler() *chi.Mux {
 	err := env.Parse(&cfg)
 
 	if err != nil {
@@ -49,13 +42,25 @@ func mainHandler() *chi.Mux {
 
 	if cfg.FileStoragePath != "" {
 		file, err = os.OpenFile(cfg.FileStoragePath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
+		defer file.Close()
 
 		if err != nil {
 			log.Fatal("error opening the file")
 		}
 	}
 
-	linkRepository = link.InitFileRepo(file)
+	linkRepository, err = link.InitFileRepo(file)
+	if err != nil {
+		log.Fatal("error reading the links")
+	}
+
+	r := mainHandler()
+
+	log.Println("Server started at port " + cfg.ServerAddress)
+	http.ListenAndServe(cfg.ServerAddress, r)
+}
+
+func mainHandler() *chi.Mux {
 
 	r := chi.NewRouter()
 

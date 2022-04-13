@@ -22,7 +22,7 @@ type Link struct {
 
 var fileStorage *os.File
 
-func InitFileRepo(file *os.File) *FileRepository {
+func InitFileRepo(file *os.File) (*FileRepository, error) {
 	fileStorage = file
 	repo := FileRepository{
 		lastUrlId: 0,
@@ -30,20 +30,17 @@ func InitFileRepo(file *os.File) *FileRepository {
 	}
 
 	if file != nil {
-		readAllLinks(file, &repo)
+		err := readAllLinks(file, &repo)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	return &repo
+	return &repo, nil
 }
 
-func readAllLinks(file *os.File, repo *FileRepository) {
-	linkConsumer, fileOpenErr := NewConsumer(file)
-
-	if fileOpenErr != nil {
-		log.Fatal(fileOpenErr)
-	}
-
-	defer linkConsumer.Close()
+func readAllLinks(file *os.File, repo *FileRepository) error {
+	linkConsumer := NewConsumer(file)
 
 	for {
 		readedLink, err := linkConsumer.ReadLink()
@@ -52,12 +49,14 @@ func readAllLinks(file *os.File, repo *FileRepository) {
 				fmt.Println("finished processing the file")
 				break
 			} else {
-				log.Fatal(err)
+				return err
 			}
 		}
 
 		repo.storage[strconv.Itoa(readedLink.ID)] = readedLink.Url
 	}
+
+	return nil
 }
 
 func (repo *FileRepository) AddLink(link string) (int, error) {
@@ -69,7 +68,6 @@ func (repo *FileRepository) AddLink(link string) (int, error) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		defer linkProducer.Close()
 
 		newLink := Link{
 			ID:  repo.lastUrlId,
@@ -117,11 +115,11 @@ type consumer struct {
 	decoder *json.Decoder
 }
 
-func NewConsumer(file *os.File) (*consumer, error) {
+func NewConsumer(file *os.File) *consumer {
 	return &consumer{
 		file:    file,
 		decoder: json.NewDecoder(file),
-	}, nil
+	}
 }
 
 func (c *consumer) ReadLink() (*Link, error) {
