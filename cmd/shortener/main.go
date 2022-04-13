@@ -61,8 +61,11 @@ func main() {
 }
 
 func mainHandler() *chi.Mux {
-
 	r := chi.NewRouter()
+
+	if linkRepository == nil {
+		linkRepository, _ = link.InitFileRepo(nil)
+	}
 
 	r.Post("/", postUrl)
 	r.Post("/api/shorten", shortenUrl)

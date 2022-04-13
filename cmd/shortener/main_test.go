@@ -30,7 +30,7 @@ func Test_indexHandler(t *testing.T) {
 			request: postRequest,
 			want: want{
 				code:        201,
-				response:    "http://localhost:8080/1",
+				response:    "/1",
 				contentType: "plain/text",
 			},
 		},
@@ -39,7 +39,7 @@ func Test_indexHandler(t *testing.T) {
 			request: jsonPostRequest,
 			want: want{
 				code:        201,
-				response:    `{"result":"http://localhost:8080/1"}`,
+				response:    `{"result":"/2"}`,
 				contentType: "application/json",
 			},
 		},
