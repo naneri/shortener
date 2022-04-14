@@ -16,7 +16,7 @@ import (
 
 type Config struct {
 	ServerAddress   string `env:"SERVER_ADDRESS" envDefault:":8080"`
-	BaseUrl         string `env:"BASE_URL" envDefault:"http://localhost:8080"`
+	BaseURL         string `env:"BASE_URL" envDefault:"http://localhost:8080"`
 	FileStoragePath string `env:"FILE_STORAGE_PATH" envDefault:"links.txt"`
 }
 
@@ -32,7 +32,7 @@ func main() {
 
 	if flag.Lookup("a") == nil {
 		flag.StringVar(&cfg.ServerAddress, "a", cfg.ServerAddress, "default server Port")
-		flag.StringVar(&cfg.BaseUrl, "b", cfg.BaseUrl, "base URL")
+		flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "base URL")
 		flag.StringVar(&cfg.FileStoragePath, "f", cfg.FileStoragePath, "file storage path")
 	}
 
@@ -42,7 +42,12 @@ func main() {
 
 	if cfg.FileStoragePath != "" {
 		file, err = os.OpenFile(cfg.FileStoragePath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
-		defer file.Close()
+		defer func(file *os.File) {
+			fileCloseErr := file.Close()
+			if fileCloseErr != nil {
+				log.Fatal("error when closing file: " + fileCloseErr.Error())
+			}
+		}(file)
 
 		if err != nil {
 			log.Fatal("error opening the file")
@@ -68,14 +73,14 @@ func mainHandler() *chi.Mux {
 	}
 
 	r.Use(middleware.GzipMiddleware)
-	r.Post("/", postUrl)
-	r.Post("/api/shorten", shortenUrl)
-	r.Get("/{url}", getUrl)
+	r.Post("/", postURL)
+	r.Post("/api/shorten", shortenURL)
+	r.Get("/{url}", getURL)
 
 	return r
 }
 
-func shortenUrl(w http.ResponseWriter, r *http.Request) {
+func shortenURL(w http.ResponseWriter, r *http.Request) {
 	type response struct {
 		Result string `json:"result"`
 	}
@@ -100,14 +105,14 @@ func shortenUrl(w http.ResponseWriter, r *http.Request) {
 	//	return
 	//}
 
-	lastUrlId, err := linkRepository.AddLink(requestBody.Url)
+	lastURLID, err := linkRepository.AddLink(requestBody.URL)
 
 	if err != nil {
 		log.Print("error when adding a link:" + err.Error())
 		http.Error(w, "error shortening the link.", http.StatusInternalServerError)
 	}
 
-	responseStruct := response{Result: generateShortLink(lastUrlId)}
+	responseStruct := response{Result: generateShortLink(lastURLID)}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
@@ -119,16 +124,16 @@ func shortenUrl(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func getUrl(w http.ResponseWriter, r *http.Request) {
-	urlId := chi.URLParam(r, "url")
+func getURL(w http.ResponseWriter, r *http.Request) {
+	urlID := chi.URLParam(r, "url")
 
-	if urlId == "" {
+	if urlID == "" {
 		fmt.Println("URL not found")
 		http.Error(w, "The URL not found", http.StatusNotFound)
 		return
 	}
 
-	if val, err := linkRepository.GetLink(urlId); err == nil {
+	if val, err := linkRepository.GetLink(urlID); err == nil {
 		w.Header().Set("Location", val)
 		w.WriteHeader(http.StatusTemporaryRedirect)
 		return
@@ -139,7 +144,7 @@ func getUrl(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func postUrl(w http.ResponseWriter, r *http.Request) {
+func postURL(w http.ResponseWriter, r *http.Request) {
 	body, err := middleware.ReadBody(r)
 	// обрабатываем ошибку
 	if err != nil {
@@ -150,12 +155,12 @@ func postUrl(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("content-type", "plain/text")
 	w.WriteHeader(http.StatusCreated)
 
-	lastUrlId, _ := linkRepository.AddLink(string(body))
+	lastURLID, _ := linkRepository.AddLink(string(body))
 
-	shortLink := generateShortLink(lastUrlId)
+	shortLink := generateShortLink(lastURLID)
 	_, _ = w.Write([]byte(shortLink))
 }
 
-func generateShortLink(lastUrlId int) string {
-	return fmt.Sprintf("%s/%d", cfg.BaseUrl, lastUrlId)
+func generateShortLink(lastURLID int) string {
+	return fmt.Sprintf("%s/%d", cfg.BaseURL, lastURLID)
 }

@@ -6,13 +6,13 @@ import (
 )
 
 type MemoryRepository struct {
-	lastUrlId int
+	lastURLID int
 	storage   map[string]string
 }
 
 func InitMemoryRepo() *MemoryRepository {
 	repo := MemoryRepository{
-		lastUrlId: 0,
+		lastURLID: 0,
 		storage:   make(map[string]string),
 	}
 
@@ -20,14 +20,14 @@ func InitMemoryRepo() *MemoryRepository {
 }
 
 func (repo *MemoryRepository) AddLink(link string) (int, error) {
-	repo.lastUrlId++
-	repo.storage[strconv.Itoa(repo.lastUrlId)] = link
+	repo.lastURLID++
+	repo.storage[strconv.Itoa(repo.lastURLID)] = link
 
-	return repo.lastUrlId, nil
+	return repo.lastURLID, nil
 }
 
-func (repo *MemoryRepository) GetLink(urlId string) (string, error) {
-	if val, ok := repo.storage[urlId]; ok {
+func (repo *MemoryRepository) GetLink(urlID string) (string, error) {
+	if val, ok := repo.storage[urlID]; ok {
 		return val, nil
 	} else {
 		return "", errors.New("record not found")

@@ -1,5 +1,5 @@
 package dto
 
 type ShortenerDto struct {
-	Url string `json:"url"`
+	URL string `json:"url"`
 }
