@@ -7,8 +7,8 @@ import (
 	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
 	"github.com/naneri/shortener/cmd/dto"
+	"github.com/naneri/shortener/cmd/shortener/middleware"
 	"github.com/naneri/shortener/internal/app/link"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -67,6 +67,7 @@ func mainHandler() *chi.Mux {
 		linkRepository, _ = link.InitFileRepo(nil)
 	}
 
+	r.Use(middleware.GzipMiddleware)
 	r.Post("/", postUrl)
 	r.Post("/api/shorten", shortenUrl)
 	r.Get("/{url}", getUrl)
@@ -80,19 +81,32 @@ func shortenUrl(w http.ResponseWriter, r *http.Request) {
 	}
 	var requestBody dto.ShortenerDto
 
-	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
-		log.Printf("io.ReadAll: %v\n", err)
-		http.Error(w, "unable to read request body", http.StatusBadRequest)
+	body, err := middleware.ReadBody(r)
+	// обрабатываем ошибку
+	if err != nil {
+		http.Error(w, err.Error(), 500)
 		return
 	}
+
+	err = json.Unmarshal(body, &requestBody)
+
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	//if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+	//	log.Printf("io.ReadAll: %v\n", err)
+	//	http.Error(w, "unable to read request body", http.StatusBadRequest)
+	//	return
+	//}
 
 	lastUrlId, _ := linkRepository.AddLink(requestBody.Url)
 
 	responseStruct := response{Result: generateShortLink(lastUrlId)}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	fmt.Printf("%+v", responseStruct)
-	err := json.NewEncoder(w).Encode(responseStruct)
+
+	err = json.NewEncoder(w).Encode(responseStruct)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -121,7 +135,7 @@ func getUrl(w http.ResponseWriter, r *http.Request) {
 }
 
 func postUrl(w http.ResponseWriter, r *http.Request) {
-	body, err := io.ReadAll(r.Body)
+	body, err := middleware.ReadBody(r)
 	// обрабатываем ошибку
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
