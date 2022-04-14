@@ -100,7 +100,12 @@ func shortenUrl(w http.ResponseWriter, r *http.Request) {
 	//	return
 	//}
 
-	lastUrlId, _ := linkRepository.AddLink(requestBody.Url)
+	lastUrlId, err := linkRepository.AddLink(requestBody.Url)
+
+	if err != nil {
+		log.Print("error when adding a link:" + err.Error())
+		http.Error(w, "error shortening the link.", http.StatusInternalServerError)
+	}
 
 	responseStruct := response{Result: generateShortLink(lastUrlId)}
 	w.Header().Set("Content-Type", "application/json")
