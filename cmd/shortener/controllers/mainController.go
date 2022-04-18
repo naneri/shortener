@@ -99,6 +99,6 @@ func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request
 	_, _ = w.Write([]byte(shortLink))
 }
 
-func generateShortLink(lastURLID int, baseUrl string) string {
-	return fmt.Sprintf("%s/%d", baseUrl, lastURLID)
+func generateShortLink(lastURLID int, baseURL string) string {
+	return fmt.Sprintf("%s/%d", baseURL, lastURLID)
 }
