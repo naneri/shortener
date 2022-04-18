@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-chi/chi/v5"
-	"github.com/naneri/shortener/cmd/dto"
 	"github.com/naneri/shortener/cmd/shortener/config"
+	"github.com/naneri/shortener/cmd/shortener/dto"
 	"github.com/naneri/shortener/cmd/shortener/middleware"
 	"github.com/naneri/shortener/internal/app/link"
 	"log"
@@ -13,7 +13,7 @@ import (
 )
 
 type MainController struct {
-	Db     link.Repository // <--
+	DB     link.Repository // <--
 	Config config.Config
 }
 
@@ -43,7 +43,7 @@ func (controller *MainController) ShortenURL(w http.ResponseWriter, r *http.Requ
 	//	return
 	//}
 
-	lastURLID, err := controller.Db.AddLink(requestBody.URL)
+	lastURLID, err := controller.DB.AddLink(requestBody.URL)
 
 	if err != nil {
 		log.Print("error when adding a link:" + err.Error())
@@ -71,7 +71,7 @@ func (controller *MainController) GetURL(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if val, err := controller.Db.GetLink(urlID); err == nil {
+	if val, err := controller.DB.GetLink(urlID); err == nil {
 		w.Header().Set("Location", val)
 		w.WriteHeader(http.StatusTemporaryRedirect)
 		return
@@ -93,7 +93,7 @@ func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request
 	w.Header().Set("content-type", "plain/text")
 	w.WriteHeader(http.StatusCreated)
 
-	lastURLID, _ := controller.Db.AddLink(string(body))
+	lastURLID, _ := controller.DB.AddLink(string(body))
 
 	shortLink := generateShortLink(lastURLID, controller.Config.BaseURL)
 	_, _ = w.Write([]byte(shortLink))

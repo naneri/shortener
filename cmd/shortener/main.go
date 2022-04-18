@@ -53,11 +53,6 @@ func main() {
 		log.Fatal("error reading the links")
 	}
 
-	mainController = controllers.MainController{
-		Db:     linkRepository,
-		Config: cfg,
-	}
-
 	r := mainHandler()
 
 	log.Println("Server started at port " + cfg.ServerAddress)
@@ -66,6 +61,15 @@ func main() {
 
 func mainHandler() *chi.Mux {
 	r := chi.NewRouter()
+
+	if linkRepository == nil {
+		linkRepository, _ = link.InitFileRepo(nil)
+	}
+
+	mainController = controllers.MainController{
+		DB:     linkRepository,
+		Config: cfg,
+	}
 
 	r.Use(middleware.GzipMiddleware)
 	r.Post("/", mainController.PostURL)
