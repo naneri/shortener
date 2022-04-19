@@ -132,6 +132,7 @@ func (c *consumer) ReadLink() (*Link, error) {
 	if err := c.decoder.Decode(&link); err != nil {
 		return nil, err
 	}
+
 	return link, nil
 }
 
