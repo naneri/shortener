@@ -129,7 +129,7 @@ func (controller *MainController) UserUrls(w http.ResponseWriter, r *http.Reques
 	for _, userLink := range links {
 		if userLink.UserId == userId {
 			dtoLink := dto.ListLink{
-				ShortUrl:    generateShortLink(userLink.ID, userLink.URL),
+				ShortUrl:    generateShortLink(userLink.ID, controller.Config.BaseURL),
 				OriginalUrl: userLink.URL,
 			}
 			userLinks = append(userLinks, dtoLink)
