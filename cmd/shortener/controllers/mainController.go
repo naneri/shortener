@@ -28,18 +28,25 @@ func (controller *MainController) ShortenURL(w http.ResponseWriter, r *http.Requ
 
 	// обрабатываем ошибку
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	err = json.Unmarshal(body, &requestBody)
 
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	lastURLID, err := controller.DB.AddLink(requestBody.URL)
+	userId, ok := r.Context().Value("userId").(uint32)
+
+	if !ok {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	lastURLID, err := controller.DB.AddLink(requestBody.URL, userId)
 
 	if err != nil {
 		log.Print("error when adding a link:" + err.Error())
@@ -87,10 +94,22 @@ func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	userId, ok := r.Context().Value("userId").(uint32)
+
+	if !ok {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("content-type", "plain/text")
 	w.WriteHeader(http.StatusCreated)
 
-	lastURLID, _ := controller.DB.AddLink(string(body))
+	lastURLID, err := controller.DB.AddLink(string(body), userId)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	shortLink := generateShortLink(lastURLID, controller.Config.BaseURL)
 	_, _ = w.Write([]byte(shortLink))

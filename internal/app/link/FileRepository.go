@@ -17,8 +17,9 @@ type FileRepository struct {
 }
 
 type Link struct {
-	ID  int    `json:"id"`
-	URL string `json:"url"`
+	ID     int    `json:"id"`
+	UserId uint32 `json:"userId"`
+	URL    string `json:"url"`
 }
 
 func InitFileRepo(file *os.File) (*FileRepository, error) {
@@ -58,7 +59,7 @@ func readAllLinks(file *os.File, repo *FileRepository) error {
 	return nil
 }
 
-func (repo *FileRepository) AddLink(link string) (int, error) {
+func (repo *FileRepository) AddLink(link string, userId uint32) (int, error) {
 	repo.lastURLID++
 	repo.storage[strconv.Itoa(repo.lastURLID)] = link
 
@@ -69,8 +70,9 @@ func (repo *FileRepository) AddLink(link string) (int, error) {
 		}
 
 		newLink := Link{
-			ID:  repo.lastURLID,
-			URL: link,
+			ID:     repo.lastURLID,
+			UserId: userId,
+			URL:    link,
 		}
 
 		if err := linkProducer.WriteLink(&newLink); err != nil {

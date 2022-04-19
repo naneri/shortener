@@ -72,6 +72,7 @@ func mainHandler() *chi.Mux {
 	}
 
 	r.Use(middleware.GzipMiddleware)
+	r.Use(middleware.IdMiddleware)
 	r.Post("/", mainController.PostURL)
 	r.Post("/api/shorten", mainController.ShortenURL)
 	r.Get("/{url}", mainController.GetURL)
