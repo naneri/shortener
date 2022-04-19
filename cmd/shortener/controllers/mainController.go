@@ -135,12 +135,13 @@ func (controller *MainController) UserUrls(w http.ResponseWriter, r *http.Reques
 			userLinks = append(userLinks, dtoLink)
 		}
 	}
+
+	w.Header().Set("Content-Type", "application/json")
 	if len(userLinks) == 0 {
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(w).Encode(userLinks)
 
 	if err != nil {
