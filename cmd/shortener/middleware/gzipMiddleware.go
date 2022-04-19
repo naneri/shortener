@@ -26,6 +26,7 @@ func GzipMiddleware(next http.Handler) http.Handler {
 			Writer:         gz,
 		}
 
+		// replacing the default request.Body with gzipped content
 		gzReader, err := gzip.NewReader(r.Body)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

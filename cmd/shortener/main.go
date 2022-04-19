@@ -15,7 +15,6 @@ import (
 
 var cfg config.Config
 var linkRepository link.Repository
-var mainController controllers.MainController
 
 func main() {
 	err := env.Parse(&cfg)
@@ -66,7 +65,7 @@ func mainHandler() *chi.Mux {
 		linkRepository, _ = link.InitFileRepo(nil)
 	}
 
-	mainController = controllers.MainController{
+	mainController := controllers.MainController{
 		DB:     linkRepository,
 		Config: cfg,
 	}

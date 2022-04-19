@@ -76,7 +76,6 @@ func (controller *MainController) GetURL(w http.ResponseWriter, r *http.Request)
 
 	w.Header().Set("Location", val)
 	w.WriteHeader(http.StatusTemporaryRedirect)
-	return
 }
 
 func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request) {
