@@ -1,66 +1,80 @@
 package main
 
 import (
-	"fmt"
+	"flag"
+	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
-	"io"
+	"github.com/naneri/shortener/cmd/shortener/config"
+	"github.com/naneri/shortener/cmd/shortener/controllers"
+	"github.com/naneri/shortener/cmd/shortener/middleware"
+	"github.com/naneri/shortener/internal/app/link"
 	"log"
 	"net/http"
-	"strconv"
+	"os"
 )
 
-const shortLinkHost = "http://localhost:8080"
-
-var lastUrlId int
-var storage map[string]string
+var cfg config.Config
+var linkRepository link.Repository
+var mainController controllers.MainController
 
 func main() {
+	err := env.Parse(&cfg)
+
+	if err != nil {
+		log.Fatalf("unable to parse env vars: %v", err)
+	}
+
+	if flag.Lookup("a") == nil {
+		flag.StringVar(&cfg.ServerAddress, "a", cfg.ServerAddress, "default server Port")
+		flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "base URL")
+		flag.StringVar(&cfg.FileStoragePath, "f", cfg.FileStoragePath, "file storage path")
+	}
+
+	flag.Parse()
+
+	var file *os.File
+
+	if cfg.FileStoragePath != "" {
+		file, err = os.OpenFile(cfg.FileStoragePath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
+		defer func(file *os.File) {
+			fileCloseErr := file.Close()
+			if fileCloseErr != nil {
+				log.Fatal("error when closing file: " + fileCloseErr.Error())
+			}
+		}(file)
+
+		if err != nil {
+			log.Fatal("error opening the file")
+		}
+	}
+
+	linkRepository, err = link.InitFileRepo(file)
+	if err != nil {
+		log.Fatal("error reading the links")
+	}
+
+	r := mainHandler()
+
+	log.Println("Server started at port " + cfg.ServerAddress)
+	http.ListenAndServe(cfg.ServerAddress, r)
+}
+
+func mainHandler() *chi.Mux {
 	r := chi.NewRouter()
 
-	r.Post("/", postUrl)
-	r.Get("/{url}", getUrl)
-
-	log.Println("Server started at port 8080")
-	http.ListenAndServe(":8080", r)
-}
-
-func getUrl(w http.ResponseWriter, r *http.Request) {
-	urlId := chi.URLParam(r, "url")
-
-	if urlId == "" {
-		fmt.Println("URL not found")
-		http.Error(w, "The URL not found", http.StatusNotFound)
-		return
+	if linkRepository == nil {
+		linkRepository, _ = link.InitFileRepo(nil)
 	}
 
-	if val, ok := storage[urlId]; ok {
-		w.Header().Set("Location", val)
-		w.WriteHeader(http.StatusTemporaryRedirect)
-		return
-	} else {
-		fmt.Println("URL not found")
-		http.Error(w, "The URL not found", http.StatusNotFound)
-		return
-	}
-}
-
-func postUrl(w http.ResponseWriter, r *http.Request) {
-	body, err := io.ReadAll(r.Body)
-	// обрабатываем ошибку
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
+	mainController = controllers.MainController{
+		DB:     linkRepository,
+		Config: cfg,
 	}
 
-	w.Header().Set("content-type", "plain/text")
-	w.WriteHeader(http.StatusCreated)
+	r.Use(middleware.GzipMiddleware)
+	r.Post("/", mainController.PostURL)
+	r.Post("/api/shorten", mainController.ShortenURL)
+	r.Get("/{url}", mainController.GetURL)
 
-	lastUrlId++
-	if storage == nil {
-		storage = make(map[string]string)
-	}
-	storage[strconv.Itoa(lastUrlId)] = string(body)
-
-	shortLink := fmt.Sprintf("%s/%d", shortLinkHost, lastUrlId)
-	_, _ = w.Write([]byte(shortLink))
+	return r
 }
