@@ -136,6 +136,7 @@ func (controller *MainController) UserUrls(w http.ResponseWriter, r *http.Reques
 		}
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	err := json.NewEncoder(w).Encode(userLinks)
 
 	if err != nil {
