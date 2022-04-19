@@ -76,6 +76,7 @@ func mainHandler() *chi.Mux {
 	r.Post("/", mainController.PostURL)
 	r.Post("/api/shorten", mainController.ShortenURL)
 	r.Get("/{url}", mainController.GetURL)
+	r.Get("/api/user/urls", mainController.UserUrls)
 
 	return r
 }

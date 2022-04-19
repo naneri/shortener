@@ -13,19 +13,13 @@ import (
 type FileRepository struct {
 	fileStorage *os.File
 	lastURLID   int
-	storage     map[string]string
-}
-
-type Link struct {
-	ID     int    `json:"id"`
-	UserId uint32 `json:"userId"`
-	URL    string `json:"url"`
+	storage     map[string]*Link
 }
 
 func InitFileRepo(file *os.File) (*FileRepository, error) {
 	repo := FileRepository{
 		lastURLID:   0,
-		storage:     make(map[string]string),
+		storage:     make(map[string]*Link),
 		fileStorage: file,
 	}
 
@@ -53,7 +47,7 @@ func readAllLinks(file *os.File, repo *FileRepository) error {
 			}
 		}
 
-		repo.storage[strconv.Itoa(readedLink.ID)] = readedLink.URL
+		repo.storage[strconv.Itoa(readedLink.ID)] = readedLink
 	}
 
 	return nil
@@ -61,7 +55,13 @@ func readAllLinks(file *os.File, repo *FileRepository) error {
 
 func (repo *FileRepository) AddLink(link string, userId uint32) (int, error) {
 	repo.lastURLID++
-	repo.storage[strconv.Itoa(repo.lastURLID)] = link
+
+	newLink := Link{
+		ID:     repo.lastURLID,
+		UserId: userId,
+		URL:    link,
+	}
+	repo.storage[strconv.Itoa(repo.lastURLID)] = &newLink
 
 	if repo.fileStorage != nil {
 		linkProducer, err := NewProducer(repo.fileStorage)
@@ -85,10 +85,14 @@ func (repo *FileRepository) AddLink(link string, userId uint32) (int, error) {
 
 func (repo *FileRepository) GetLink(urlID string) (string, error) {
 	if val, ok := repo.storage[urlID]; ok {
-		return val, nil
+		return val.URL, nil
 	} else {
 		return "", errors.New("record not found")
 	}
+}
+
+func (repo *FileRepository) GetAllLinks() map[string]*Link {
+	return repo.storage
 }
 
 type producer struct {

@@ -42,7 +42,7 @@ func (controller *MainController) ShortenURL(w http.ResponseWriter, r *http.Requ
 	userId, ok := r.Context().Value("userId").(uint32)
 
 	if !ok {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "wrong user ID", http.StatusInternalServerError)
 		return
 	}
 
@@ -97,7 +97,7 @@ func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request
 	userId, ok := r.Context().Value("userId").(uint32)
 
 	if !ok {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "wrong user ID", http.StatusInternalServerError)
 		return
 	}
 
@@ -113,6 +113,26 @@ func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request
 
 	shortLink := generateShortLink(lastURLID, controller.Config.BaseURL)
 	_, _ = w.Write([]byte(shortLink))
+}
+
+func (controller *MainController) UserUrls(w http.ResponseWriter, r *http.Request) {
+	var userLinks []*link.Link
+	userId, ok := r.Context().Value("userId").(uint32)
+
+	if !ok {
+		http.Error(w, "wrong user ID", http.StatusInternalServerError)
+		return
+	}
+
+	links := controller.DB.GetAllLinks()
+
+	for _, userLink := range links {
+		if userLink.UserId == userId {
+			userLinks = append(userLinks, userLink)
+		}
+	}
+
+	fmt.Println(userLinks)
 }
 
 func generateShortLink(lastURLID int, baseURL string) string {
