@@ -39,14 +39,14 @@ func (controller *MainController) ShortenURL(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	userId, ok := r.Context().Value("userId").(uint32)
+	userID, ok := r.Context().Value("userID").(uint32)
 
 	if !ok {
 		http.Error(w, "wrong user ID", http.StatusInternalServerError)
 		return
 	}
 
-	lastURLID, err := controller.DB.AddLink(requestBody.URL, userId)
+	lastURLID, err := controller.DB.AddLink(requestBody.URL, userID)
 
 	if err != nil {
 		log.Print("error when adding a link:" + err.Error())
@@ -94,7 +94,7 @@ func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	userId, ok := r.Context().Value("userId").(uint32)
+	userID, ok := r.Context().Value("userID").(uint32)
 
 	if !ok {
 		http.Error(w, "wrong user ID", http.StatusInternalServerError)
@@ -104,7 +104,7 @@ func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request
 	w.Header().Set("content-type", "plain/text")
 	w.WriteHeader(http.StatusCreated)
 
-	lastURLID, err := controller.DB.AddLink(string(body), userId)
+	lastURLID, err := controller.DB.AddLink(string(body), userID)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -117,7 +117,7 @@ func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request
 
 func (controller *MainController) UserUrls(w http.ResponseWriter, r *http.Request) {
 	var userLinks []dto.ListLink
-	userId, ok := r.Context().Value("userId").(uint32)
+	userID, ok := r.Context().Value("userID").(uint32)
 
 	if !ok {
 		http.Error(w, "wrong user ID", http.StatusInternalServerError)
@@ -127,10 +127,10 @@ func (controller *MainController) UserUrls(w http.ResponseWriter, r *http.Reques
 	links := controller.DB.GetAllLinks()
 
 	for _, userLink := range links {
-		if userLink.UserId == userId {
+		if userLink.UserID == userID {
 			dtoLink := dto.ListLink{
-				ShortUrl:    generateShortLink(userLink.ID, controller.Config.BaseURL),
-				OriginalUrl: userLink.URL,
+				ShortURL:    generateShortLink(userLink.ID, controller.Config.BaseURL),
+				OriginalURL: userLink.URL,
 			}
 			userLinks = append(userLinks, dtoLink)
 		}

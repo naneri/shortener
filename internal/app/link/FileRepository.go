@@ -53,12 +53,12 @@ func readAllLinks(file *os.File, repo *FileRepository) error {
 	return nil
 }
 
-func (repo *FileRepository) AddLink(link string, userId uint32) (int, error) {
+func (repo *FileRepository) AddLink(link string, userID uint32) (int, error) {
 	repo.lastURLID++
 
 	newLink := Link{
 		ID:     repo.lastURLID,
-		UserId: userId,
+		UserID: userID,
 		URL:    link,
 	}
 	repo.storage[strconv.Itoa(repo.lastURLID)] = &newLink
@@ -71,7 +71,7 @@ func (repo *FileRepository) AddLink(link string, userId uint32) (int, error) {
 
 		newLink := Link{
 			ID:     repo.lastURLID,
-			UserId: userId,
+			UserID: userID,
 			URL:    link,
 		}
 

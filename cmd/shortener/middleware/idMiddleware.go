@@ -12,9 +12,9 @@ import (
 )
 
 var secretKey = []byte("secret key")
-var userId uint32
+var userID uint32
 
-func IdMiddleware(next http.Handler) http.Handler {
+func IDMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var (
 			data   []byte
@@ -37,7 +37,7 @@ func IdMiddleware(next http.Handler) http.Handler {
 				httpCookie := generateUserCookie()
 				http.SetCookie(w, &httpCookie)
 			} else {
-				userId = binary.BigEndian.Uint32(data[:4])
+				userID = binary.BigEndian.Uint32(data[:4])
 				h := hmac.New(sha256.New, secretKey)
 				h.Write(data[:4])
 				idSign = h.Sum(nil)
@@ -52,7 +52,7 @@ func IdMiddleware(next http.Handler) http.Handler {
 		}
 
 		ctx := r.Context()
-		req := r.WithContext(context.WithValue(ctx, "userId", userId))
+		req := r.WithContext(context.WithValue(ctx, "userID", userID))
 		*r = *req
 		// else grant user the signed cookie with Unique identifier
 		next.ServeHTTP(w, r)
@@ -60,13 +60,13 @@ func IdMiddleware(next http.Handler) http.Handler {
 }
 
 func generateUserCookie() http.Cookie {
-	userId++
-	uint32userIdBuf := make([]byte, 4)
-	binary.BigEndian.PutUint32(uint32userIdBuf[0:], uint32(userId))
+	userID++
+	uint32userIDBuf := make([]byte, 4)
+	binary.BigEndian.PutUint32(uint32userIDBuf[0:], uint32(userID))
 
 	hash := hmac.New(sha256.New, secretKey)
-	hash.Write(uint32userIdBuf)
-	sign := hash.Sum(uint32userIdBuf)
+	hash.Write(uint32userIDBuf)
+	sign := hash.Sum(uint32userIDBuf)
 	userCookie := hex.EncodeToString(sign)
 
 	expire := time.Now().Add(10 * time.Minute)
