@@ -6,8 +6,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/naneri/shortener/cmd/shortener/config"
 	"github.com/naneri/shortener/cmd/shortener/dto"
-	"github.com/naneri/shortener/cmd/shortener/middleware"
 	"github.com/naneri/shortener/internal/app/link"
+	"io"
 	"log"
 	"net/http"
 )
@@ -24,7 +24,7 @@ func (controller *MainController) ShortenURL(w http.ResponseWriter, r *http.Requ
 
 	var requestBody dto.ShortenerDto
 
-	body, err := middleware.ReadBody(r)
+	body, err := io.ReadAll(r.Body)
 	// обрабатываем ошибку
 	if err != nil {
 		http.Error(w, err.Error(), 500)
@@ -37,11 +37,6 @@ func (controller *MainController) ShortenURL(w http.ResponseWriter, r *http.Requ
 		http.Error(w, err.Error(), 500)
 		return
 	}
-	//if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
-	//	log.Printf("io.ReadAll: %v\n", err)
-	//	http.Error(w, "unable to read request body", http.StatusBadRequest)
-	//	return
-	//}
 
 	lastURLID, err := controller.DB.AddLink(requestBody.URL)
 
@@ -83,7 +78,7 @@ func (controller *MainController) GetURL(w http.ResponseWriter, r *http.Request)
 }
 
 func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request) {
-	body, err := middleware.ReadBody(r)
+	body, err := io.ReadAll(r.Body)
 	// обрабатываем ошибку
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
