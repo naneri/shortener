@@ -66,19 +66,22 @@ func (controller *MainController) GetURL(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if val, err := controller.DB.GetLink(urlID); err == nil {
-		w.Header().Set("Location", val)
-		w.WriteHeader(http.StatusTemporaryRedirect)
-		return
-	} else {
+	val, err := controller.DB.GetLink(urlID)
+
+	if err != nil {
 		fmt.Println("URL not found")
 		http.Error(w, "The URL not found", http.StatusNotFound)
 		return
 	}
+
+	w.Header().Set("Location", val)
+	w.WriteHeader(http.StatusTemporaryRedirect)
+	return
 }
 
 func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
+
 	// обрабатываем ошибку
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

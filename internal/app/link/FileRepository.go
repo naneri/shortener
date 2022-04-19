@@ -11,8 +11,9 @@ import (
 )
 
 type FileRepository struct {
-	lastURLID int
-	storage   map[string]string
+	fileStorage *os.File
+	lastURLID   int
+	storage     map[string]string
 }
 
 type Link struct {
@@ -20,13 +21,11 @@ type Link struct {
 	URL string `json:"url"`
 }
 
-var fileStorage *os.File
-
 func InitFileRepo(file *os.File) (*FileRepository, error) {
-	fileStorage = file
 	repo := FileRepository{
-		lastURLID: 0,
-		storage:   make(map[string]string),
+		lastURLID:   0,
+		storage:     make(map[string]string),
+		fileStorage: file,
 	}
 
 	if file != nil {
@@ -63,8 +62,8 @@ func (repo *FileRepository) AddLink(link string) (int, error) {
 	repo.lastURLID++
 	repo.storage[strconv.Itoa(repo.lastURLID)] = link
 
-	if fileStorage != nil {
-		linkProducer, err := NewProducer(fileStorage)
+	if repo.fileStorage != nil {
+		linkProducer, err := NewProducer(repo.fileStorage)
 		if err != nil {
 			log.Fatal(err)
 		}
