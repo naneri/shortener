@@ -25,6 +25,7 @@ func (controller *MainController) ShortenURL(w http.ResponseWriter, r *http.Requ
 	var requestBody dto.ShortenerDto
 
 	body, err := middleware.ReadBody(r)
+
 	// обрабатываем ошибку
 	if err != nil {
 		http.Error(w, err.Error(), 500)
@@ -37,11 +38,6 @@ func (controller *MainController) ShortenURL(w http.ResponseWriter, r *http.Requ
 		http.Error(w, err.Error(), 500)
 		return
 	}
-	//if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
-	//	log.Printf("io.ReadAll: %v\n", err)
-	//	http.Error(w, "unable to read request body", http.StatusBadRequest)
-	//	return
-	//}
 
 	lastURLID, err := controller.DB.AddLink(requestBody.URL)
 
@@ -71,15 +67,16 @@ func (controller *MainController) GetURL(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if val, err := controller.DB.GetLink(urlID); err == nil {
-		w.Header().Set("Location", val)
-		w.WriteHeader(http.StatusTemporaryRedirect)
-		return
-	} else {
+	val, err := controller.DB.GetLink(urlID)
+
+	if err != nil {
 		fmt.Println("URL not found")
 		http.Error(w, "The URL not found", http.StatusNotFound)
 		return
 	}
+
+	w.Header().Set("Location", val)
+	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
 func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request) {

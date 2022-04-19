@@ -15,7 +15,6 @@ import (
 
 var cfg config.Config
 var linkRepository link.Repository
-var mainController controllers.MainController
 
 func main() {
 	err := env.Parse(&cfg)
@@ -62,11 +61,12 @@ func main() {
 func mainHandler() *chi.Mux {
 	r := chi.NewRouter()
 
+	// if I don't do this, the main_test.go will fail as it only tests this handler and MainController does need the Repo
 	if linkRepository == nil {
 		linkRepository, _ = link.InitFileRepo(nil)
 	}
 
-	mainController = controllers.MainController{
+	mainController := controllers.MainController{
 		DB:     linkRepository,
 		Config: cfg,
 	}
