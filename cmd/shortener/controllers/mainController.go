@@ -116,7 +116,7 @@ func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request
 }
 
 func (controller *MainController) UserUrls(w http.ResponseWriter, r *http.Request) {
-	var userLinks []*link.Link
+	var userLinks []dto.ListLink
 	userId, ok := r.Context().Value("userId").(uint32)
 
 	if !ok {
@@ -128,11 +128,21 @@ func (controller *MainController) UserUrls(w http.ResponseWriter, r *http.Reques
 
 	for _, userLink := range links {
 		if userLink.UserId == userId {
-			userLinks = append(userLinks, userLink)
+			dtoLink := dto.ListLink{
+				ShortUrl:    generateShortLink(userLink.ID, userLink.URL),
+				OriginalUrl: userLink.URL,
+			}
+			userLinks = append(userLinks, dtoLink)
 		}
 	}
 
-	fmt.Println(userLinks)
+	err := json.NewEncoder(w).Encode(userLinks)
+
+	if err != nil {
+		http.Error(w, "error generating response", http.StatusInternalServerError)
+		return
+	}
+
 }
 
 func generateShortLink(lastURLID int, baseURL string) string {
