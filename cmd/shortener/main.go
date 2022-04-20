@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
@@ -15,6 +16,7 @@ import (
 
 var cfg config.Config
 var linkRepository link.Repository
+var db *sql.DB
 
 func main() {
 	err := env.Parse(&cfg)
@@ -27,6 +29,7 @@ func main() {
 		flag.StringVar(&cfg.ServerAddress, "a", cfg.ServerAddress, "default server Port")
 		flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "base URL")
 		flag.StringVar(&cfg.FileStoragePath, "f", cfg.FileStoragePath, "file storage path")
+		flag.StringVar(&cfg.DatabaseAddress, "d", cfg.DatabaseAddress, "database DSN")
 	}
 
 	flag.Parse()
@@ -52,6 +55,12 @@ func main() {
 		log.Fatal("error reading the links")
 	}
 
+	db, err = sql.Open("pgx", cfg.DatabaseAddress)
+
+	if err != nil {
+		log.Fatal("error initializing the database")
+	}
+
 	r := mainHandler()
 
 	log.Println("Server started at port " + cfg.ServerAddress)
@@ -59,6 +68,7 @@ func main() {
 }
 
 func mainHandler() *chi.Mux {
+
 	r := chi.NewRouter()
 
 	// if I don't do this, the main_test.go will fail as it only tests this handler and MainController does need the Repo
@@ -70,6 +80,9 @@ func mainHandler() *chi.Mux {
 		DB:     linkRepository,
 		Config: cfg,
 	}
+	utilityController := controllers.UtilityController{
+		DbConnection: db,
+	}
 
 	r.Use(middleware.GzipMiddleware)
 	r.Use(middleware.IDMiddleware)
@@ -77,6 +90,7 @@ func mainHandler() *chi.Mux {
 	r.Post("/api/shorten", mainController.ShortenURL)
 	r.Get("/{url}", mainController.GetURL)
 	r.Get("/api/user/urls", mainController.UserUrls)
+	r.Get("/ping", utilityController.PingDb)
 
 	return r
 }
