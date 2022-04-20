@@ -5,6 +5,7 @@ import (
 	"flag"
 	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
+	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/naneri/shortener/cmd/shortener/config"
 	"github.com/naneri/shortener/cmd/shortener/controllers"
 	"github.com/naneri/shortener/cmd/shortener/middleware"
@@ -58,7 +59,7 @@ func main() {
 	db, err = sql.Open("pgx", cfg.DatabaseAddress)
 
 	if err != nil {
-		log.Fatal("error initializing the database")
+		log.Fatal("error initializing the database, " + err.Error())
 	}
 
 	r := mainHandler()
