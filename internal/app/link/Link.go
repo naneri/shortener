@@ -5,10 +5,3 @@ type Link struct {
 	UserID uint32 `json:"userId"`
 	URL    string `json:"url"`
 }
-
-//
-//type DBLink struct {
-//	ID 		uint
-//	UserID 	uint32
-//	URL 	string
-//}
