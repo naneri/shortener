@@ -8,3 +8,9 @@ func RunMigrations(db *sql.DB) error {
 
 	return err
 }
+
+func DropTables(db *sql.DB) error {
+	_, err := db.Exec("DROP table IF EXISTS links")
+
+	return err
+}

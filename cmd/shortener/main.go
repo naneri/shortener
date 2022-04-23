@@ -70,7 +70,12 @@ func main() {
 			log.Fatal("error running migrations: " + err.Error())
 		}
 
-		defer db.Close()
+		defer func() {
+			// tried to do this to fix increment 9 tests
+
+			_ = migrations.DropTables(db)
+			_ = db.Close()
+		}()
 	}
 
 	r := mainHandler()
@@ -82,10 +87,10 @@ func main() {
 func mainHandler() *chi.Mux {
 	r := chi.NewRouter()
 
+	// if I don't do this, the main_test.go will fail as it only tests this handler and MainController does need the Repo
 	if cfg.DatabaseAddress != "" {
 		linkRepository, _ = link.InitDatabaseRepository(db)
 	} else {
-		// if I don't do this, the main_test.go will fail as it only tests this handler and MainController does need the Repo
 		if linkRepository == nil {
 			linkRepository, _ = link.InitFileRepo(nil)
 		}
