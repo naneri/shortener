@@ -62,7 +62,7 @@ func IDMiddleware(next http.Handler) http.Handler {
 func generateUserCookie() http.Cookie {
 	userID++
 	uint32userIDBuf := make([]byte, 4)
-	binary.BigEndian.PutUint32(uint32userIDBuf[0:], uint32(userID))
+	binary.BigEndian.PutUint32(uint32userIDBuf[0:], userID)
 
 	hash := hmac.New(sha256.New, secretKey)
 	hash.Write(uint32userIDBuf)
