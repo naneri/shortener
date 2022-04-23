@@ -13,8 +13,8 @@ import (
 )
 
 type MainController struct {
-	DB     link.Repository // <--
-	Config config.Config
+	LinkRepository link.Repository // <--
+	Config         config.Config
 }
 
 func (controller *MainController) ShortenURL(w http.ResponseWriter, r *http.Request) {
@@ -46,7 +46,7 @@ func (controller *MainController) ShortenURL(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	lastURLID, err := controller.DB.AddLink(requestBody.URL, userID)
+	lastURLID, err := controller.LinkRepository.AddLink(requestBody.URL, userID)
 
 	if err != nil {
 		log.Print("error when adding a link:" + err.Error())
@@ -69,15 +69,15 @@ func (controller *MainController) GetURL(w http.ResponseWriter, r *http.Request)
 	urlID := chi.URLParam(r, "url")
 
 	if urlID == "" {
-		fmt.Println("URL not found")
-		http.Error(w, "The URL not found", http.StatusNotFound)
+		fmt.Println("empty URL")
+		http.Error(w, "The URL param is empty", http.StatusNotFound)
 		return
 	}
 
-	val, err := controller.DB.GetLink(urlID)
+	val, err := controller.LinkRepository.GetLink(urlID)
 
 	if err != nil {
-		fmt.Println("URL not found")
+		fmt.Println("URL not found: " + err.Error())
 		http.Error(w, "The URL not found", http.StatusNotFound)
 		return
 	}
@@ -104,7 +104,7 @@ func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request
 	w.Header().Set("content-type", "plain/text")
 	w.WriteHeader(http.StatusCreated)
 
-	lastURLID, err := controller.DB.AddLink(string(body), userID)
+	lastURLID, err := controller.LinkRepository.AddLink(string(body), userID)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -124,7 +124,7 @@ func (controller *MainController) UserUrls(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	links := controller.DB.GetAllLinks()
+	links := controller.LinkRepository.GetAllLinks()
 
 	for _, userLink := range links {
 		if userLink.UserID == userID {

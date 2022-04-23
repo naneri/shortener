@@ -10,6 +10,7 @@ import (
 	"github.com/naneri/shortener/cmd/shortener/controllers"
 	"github.com/naneri/shortener/cmd/shortener/middleware"
 	"github.com/naneri/shortener/internal/app/link"
+	"github.com/naneri/shortener/internal/migrations"
 	"log"
 	"net/http"
 	"os"
@@ -56,10 +57,20 @@ func main() {
 		log.Fatal("error reading the links")
 	}
 
-	db, err = sql.Open("pgx", cfg.DatabaseAddress)
+	if cfg.DatabaseAddress != "" {
+		db, err = sql.Open("pgx", cfg.DatabaseAddress)
 
-	if err != nil {
-		log.Fatal("error initializing the database, " + err.Error())
+		if err != nil {
+			log.Fatal("error initializing the database, " + err.Error())
+		}
+
+		err = migrations.RunMigrations(db)
+
+		if err != nil {
+			log.Fatal("error running migrations: " + err.Error())
+		}
+
+		defer db.Close()
 	}
 
 	r := mainHandler()
@@ -69,17 +80,20 @@ func main() {
 }
 
 func mainHandler() *chi.Mux {
-
 	r := chi.NewRouter()
 
-	// if I don't do this, the main_test.go will fail as it only tests this handler and MainController does need the Repo
-	if linkRepository == nil {
-		linkRepository, _ = link.InitFileRepo(nil)
+	if cfg.DatabaseAddress != "" {
+		linkRepository, _ = link.InitDatabaseRepository(db)
+	} else {
+		// if I don't do this, the main_test.go will fail as it only tests this handler and MainController does need the Repo
+		if linkRepository == nil {
+			linkRepository, _ = link.InitFileRepo(nil)
+		}
 	}
 
 	mainController := controllers.MainController{
-		DB:     linkRepository,
-		Config: cfg,
+		LinkRepository: linkRepository,
+		Config:         cfg,
 	}
 	utilityController := controllers.UtilityController{
 		DbConnection: db,
