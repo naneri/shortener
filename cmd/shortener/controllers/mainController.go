@@ -49,6 +49,18 @@ func (controller *MainController) ShortenURL(w http.ResponseWriter, r *http.Requ
 	lastURLID, err := controller.LinkRepository.AddLink(requestBody.URL, userID)
 
 	if err != nil {
+		if lastURLID != 0 {
+			shortenedUrl := generateShortLink(lastURLID, controller.Config.BaseURL)
+			w.WriteHeader(http.StatusConflict)
+			_, err = w.Write([]byte(shortenedUrl))
+
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			return
+		}
 		log.Print("error when adding a link:" + err.Error())
 		http.Error(w, "error shortening the link.", http.StatusInternalServerError)
 	}
@@ -107,6 +119,19 @@ func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request
 	lastURLID, err := controller.LinkRepository.AddLink(string(body), userID)
 
 	if err != nil {
+		if lastURLID != 0 {
+			shortenedUrl := generateShortLink(lastURLID, controller.Config.BaseURL)
+			w.WriteHeader(http.StatusConflict)
+			_, err = w.Write([]byte(shortenedUrl))
+
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			return
+		}
+
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

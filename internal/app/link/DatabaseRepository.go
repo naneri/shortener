@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"github.com/jackc/pgerrcode"
+	"github.com/lib/pq"
 	"strconv"
 	"time"
 )
@@ -49,10 +51,38 @@ func (repo *DatabaseRepository) AddLink(link string, userID uint32) (int, error)
 
 	var id int
 	if err := repo.dbConnection.QueryRowContext(ctx, "INSERT INTO public.links(user_id, link) VALUES ($1, $2) RETURNING id", userID, link).Scan(&id); err != nil {
+		var pgError pq.Error
+
+		if errors.As(err, &pgError) {
+			if pgError.Code == pgerrcode.UniqueViolation {
+				linkId, queryErr := repo.getLinkIdByUrl(ctx, link)
+
+				if queryErr != nil {
+					return 0, queryErr
+				}
+				return linkId, err
+			}
+		}
+
 		return 0, err
 	}
 
 	return id, nil
+}
+
+func (repo *DatabaseRepository) getLinkIdByUrl(ctx context.Context, url string) (int, error) {
+	row := repo.dbConnection.QueryRowContext(ctx, "SELECT id, user_id, link FROM links WHERE link = $1 LIMIT 1", url)
+
+	var dbLink Link
+
+	err := row.Scan(&dbLink.ID, &dbLink.UserID, &dbLink.URL)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return dbLink.ID, nil
+
 }
 
 func (repo *DatabaseRepository) GetAllLinks() map[string]*Link {
