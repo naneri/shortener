@@ -109,6 +109,7 @@ func mainHandler() *chi.Mux {
 	r.Get("/{url}", mainController.GetURL)
 	r.Get("/api/user/urls", mainController.UserUrls)
 	r.Get("/ping", utilityController.PingDb)
+	r.Post("/api/shorten/batch", mainController.ShortenBatch)
 
 	return r
 }

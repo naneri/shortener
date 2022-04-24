@@ -151,7 +151,7 @@ func (controller *MainController) UserUrls(w http.ResponseWriter, r *http.Reques
 
 }
 
-func (controller *MainController) shortenBatch(w http.ResponseWriter, r *http.Request) {
+func (controller *MainController) ShortenBatch(w http.ResponseWriter, r *http.Request) {
 	var batchLinks []dto.BatchLink
 	responseLinks := make([]dto.ResponseBatchLink, 0, 8)
 
