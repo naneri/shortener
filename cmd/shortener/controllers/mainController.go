@@ -187,7 +187,7 @@ func (controller *MainController) ShortenBatch(w http.ResponseWriter, r *http.Re
 
 		responseLinks = append(responseLinks, dto.ResponseBatchLink{
 			CorrelationId: batchLink.CorrelationId,
-			ShortUrl:      generateShortLink(lastURLID, batchLink.OriginalUrl),
+			ShortUrl:      generateShortLink(lastURLID, controller.Config.BaseURL),
 		})
 	}
 
