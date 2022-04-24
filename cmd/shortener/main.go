@@ -10,6 +10,7 @@ import (
 	"github.com/naneri/shortener/cmd/shortener/controllers"
 	"github.com/naneri/shortener/cmd/shortener/middleware"
 	"github.com/naneri/shortener/internal/app/link"
+	"github.com/naneri/shortener/internal/migrations"
 	"log"
 	"net/http"
 	"os"
@@ -36,26 +37,26 @@ func main() {
 
 	flag.Parse()
 
-	//if cfg.DatabaseAddress != "" {
-	//	db, err = sql.Open("pgx", cfg.DatabaseAddress)
-	//
-	//	if err != nil {
-	//		log.Fatal("error initializing the database, " + err.Error())
-	//	}
-	//
-	//	err = migrations.RunMigrations(db)
-	//
-	//	if err != nil {
-	//		log.Fatal("error running migrations: " + err.Error())
-	//	}
-	//
-	//	linkRepository, _ = link.InitDatabaseRepository(db)
-	//	defer func() {
-	//		// tried to do this to fix increment 9 tests
-	//		_ = migrations.DropTables(db)
-	//		_ = db.Close()
-	//	}()
-	//}
+	if cfg.DatabaseAddress != "" {
+		db, err = sql.Open("pgx", cfg.DatabaseAddress)
+
+		if err != nil {
+			log.Fatal("error initializing the database, " + err.Error())
+		}
+
+		err = migrations.RunMigrations(db)
+
+		if err != nil {
+			log.Fatal("error running migrations: " + err.Error())
+		}
+
+		linkRepository, _ = link.InitDatabaseRepository(db)
+		defer func() {
+			// tried to do this to fix increment 9 tests
+			_ = migrations.DropTables(db)
+			_ = db.Close()
+		}()
+	}
 
 	var file *os.File
 

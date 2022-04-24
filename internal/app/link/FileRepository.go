@@ -91,7 +91,7 @@ func (repo *FileRepository) GetLink(urlID string) (string, error) {
 	}
 }
 
-func (repo *FileRepository) GetAllLinks() map[string]*Link {
+func (repo *FileRepository) GetAllLinks(userID uint32) map[string]*Link {
 	return repo.storage
 }
 

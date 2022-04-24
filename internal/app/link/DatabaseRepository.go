@@ -55,14 +55,14 @@ func (repo *DatabaseRepository) AddLink(link string, userID uint32) (int, error)
 	return id, nil
 }
 
-func (repo *DatabaseRepository) GetAllLinks() map[string]*Link {
+func (repo *DatabaseRepository) GetAllLinks(userID uint32) map[string]*Link {
 	links := make(map[string]*Link)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 
 	defer cancel()
 
-	rows, _ := repo.dbConnection.QueryContext(ctx, "SELECT id, user_id, link FROM public.links")
+	rows, _ := repo.dbConnection.QueryContext(ctx, "SELECT id, user_id, link FROM public.links WHERE user_id = $1", userID)
 
 	// обязательно закрываем перед возвратом функции
 	defer rows.Close()

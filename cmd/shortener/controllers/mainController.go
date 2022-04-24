@@ -124,7 +124,7 @@ func (controller *MainController) UserUrls(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	links := controller.LinkRepository.GetAllLinks()
+	links := controller.LinkRepository.GetAllLinks(userID)
 
 	for _, userLink := range links {
 		if userLink.UserID == userID {
