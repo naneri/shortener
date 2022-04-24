@@ -25,6 +25,7 @@ func IDMiddleware(next http.Handler) http.Handler {
 		// parse cookie
 		cookie, err := r.Cookie("user")
 
+		// can I make this code prettier?
 		if err != nil {
 			fmt.Println("error getting cookie: " + err.Error())
 			httpCookie := generateUserCookie()

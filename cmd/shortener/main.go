@@ -37,27 +37,6 @@ func main() {
 
 	flag.Parse()
 
-	var file *os.File
-
-	if cfg.FileStoragePath != "" {
-		file, err = os.OpenFile(cfg.FileStoragePath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
-		defer func(file *os.File) {
-			fileCloseErr := file.Close()
-			if fileCloseErr != nil {
-				log.Fatal("error when closing file: " + fileCloseErr.Error())
-			}
-		}(file)
-
-		if err != nil {
-			log.Fatal("error opening the file")
-		}
-	}
-
-	linkRepository, err = link.InitFileRepo(file)
-	if err != nil {
-		log.Fatal("error reading the links")
-	}
-
 	if cfg.DatabaseAddress != "" {
 		db, err = sql.Open("pgx", cfg.DatabaseAddress)
 
@@ -79,6 +58,27 @@ func main() {
 		}()
 	}
 
+	var file *os.File
+
+	if cfg.FileStoragePath != "" {
+		file, err = os.OpenFile(cfg.FileStoragePath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
+		defer func(file *os.File) {
+			fileCloseErr := file.Close()
+			if fileCloseErr != nil {
+				log.Fatal("error when closing file: " + fileCloseErr.Error())
+			}
+		}(file)
+
+		if err != nil {
+			log.Fatal("error opening the file")
+		}
+
+		linkRepository, err = link.InitFileRepo(file)
+		if err != nil {
+			log.Fatal("error reading the links")
+		}
+	}
+
 	r := mainHandler()
 
 	log.Println("Server started at port " + cfg.ServerAddress)
@@ -97,6 +97,7 @@ func mainHandler() *chi.Mux {
 		LinkRepository: linkRepository,
 		Config:         cfg,
 	}
+
 	utilityController := controllers.UtilityController{
 		DbConnection: db,
 	}
