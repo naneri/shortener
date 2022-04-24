@@ -53,7 +53,7 @@ func main() {
 		linkRepository, _ = link.InitDatabaseRepository(db)
 		defer func() {
 			// tried to do this to fix increment 9 tests
-			_ = migrations.DropTables(db)
+			//_ = migrations.DropTables(db)
 			_ = db.Close()
 		}()
 	}

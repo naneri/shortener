@@ -124,7 +124,7 @@ func (controller *MainController) UserUrls(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	links := controller.LinkRepository.GetAllLinks(userID)
+	links := controller.LinkRepository.GetAllLinks()
 
 	for _, userLink := range links {
 		if userLink.UserID == userID {
@@ -149,6 +149,60 @@ func (controller *MainController) UserUrls(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+}
+
+func (controller *MainController) shortenBatch(w http.ResponseWriter, r *http.Request) {
+	var batchLinks []dto.BatchLink
+	responseLinks := make([]dto.ResponseBatchLink, 0, 8)
+
+	body, err := middleware.ReadBody(r)
+
+	// обрабатываем ошибку
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = json.Unmarshal(body, &batchLinks)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	userID, ok := r.Context().Value("userID").(uint32)
+
+	if !ok {
+		http.Error(w, "wrong user ID", http.StatusInternalServerError)
+		return
+	}
+
+	for _, batchLink := range batchLinks {
+		lastURLID, addErr := controller.LinkRepository.AddLink(batchLink.OriginalUrl, userID)
+
+		if addErr != nil {
+			http.Error(w, addErr.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		responseLinks = append(responseLinks, dto.ResponseBatchLink{
+			CorrelationId: batchLink.CorrelationId,
+			ShortUrl:      generateShortLink(lastURLID, batchLink.OriginalUrl),
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if len(responseLinks) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	encodeErr := json.NewEncoder(w).Encode(responseLinks)
+
+	if encodeErr != nil {
+		http.Error(w, "error generating response", http.StatusInternalServerError)
+		return
+	}
 }
 
 func generateShortLink(lastURLID int, baseURL string) string {
