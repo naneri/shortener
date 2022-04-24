@@ -197,14 +197,13 @@ func (controller *MainController) ShortenBatch(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	w.WriteHeader(http.StatusCreated)
 	encodeErr := json.NewEncoder(w).Encode(responseLinks)
 
 	if encodeErr != nil {
 		http.Error(w, "error generating response", http.StatusInternalServerError)
 		return
 	}
-
-	w.WriteHeader(http.StatusCreated)
 }
 
 func generateShortLink(lastURLID int, baseURL string) string {
