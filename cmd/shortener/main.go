@@ -38,7 +38,7 @@ func main() {
 	flag.Parse()
 
 	if cfg.DatabaseAddress != "" {
-		db, err = sql.Open("pgx", cfg.DatabaseAddress)
+		db, err = sql.Open("postgres", cfg.DatabaseAddress)
 
 		if err != nil {
 			log.Fatal("error initializing the database, " + err.Error())
