@@ -91,8 +91,8 @@ func (repo *FileRepository) GetLink(urlID string) (string, error) {
 	}
 }
 
-func (repo *FileRepository) GetAllLinks() map[string]*Link {
-	return repo.storage
+func (repo *FileRepository) GetAllLinks() (map[string]*Link, error) {
+	return repo.storage, nil
 }
 
 type producer struct {

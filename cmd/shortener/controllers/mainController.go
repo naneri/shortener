@@ -50,9 +50,9 @@ func (controller *MainController) ShortenURL(w http.ResponseWriter, r *http.Requ
 
 	if err != nil {
 		if lastURLID != 0 {
-			shortenedUrl := generateShortLink(lastURLID, controller.Config.BaseURL)
+			shortenedURL := generateShortLink(lastURLID, controller.Config.BaseURL)
 			w.WriteHeader(http.StatusConflict)
-			_, err = w.Write([]byte(shortenedUrl))
+			_, err = w.Write([]byte(shortenedURL))
 
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -106,7 +106,7 @@ func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	userID, ok := r.Context().Value("userID").(uint32)
+	userID, ok := r.Context().Value(middleware.UserID("UserID")).(uint32)
 
 	if !ok {
 		http.Error(w, "wrong user ID", http.StatusInternalServerError)
@@ -120,9 +120,9 @@ func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request
 
 	if err != nil {
 		if lastURLID != 0 {
-			shortenedUrl := generateShortLink(lastURLID, controller.Config.BaseURL)
+			shortenedURL := generateShortLink(lastURLID, controller.Config.BaseURL)
 			w.WriteHeader(http.StatusConflict)
-			_, err = w.Write([]byte(shortenedUrl))
+			_, err = w.Write([]byte(shortenedURL))
 
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -142,14 +142,19 @@ func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request
 
 func (controller *MainController) UserUrls(w http.ResponseWriter, r *http.Request) {
 	var userLinks []dto.ListLink
-	userID, ok := r.Context().Value("userID").(uint32)
+	userID, ok := r.Context().Value(middleware.UserID("UserID")).(uint32)
 
 	if !ok {
 		http.Error(w, "wrong user ID", http.StatusInternalServerError)
 		return
 	}
 
-	links := controller.LinkRepository.GetAllLinks()
+	links, dbErr := controller.LinkRepository.GetAllLinks()
+
+	if dbErr != nil {
+		log.Println("Error getting data from the storage: " + dbErr.Error())
+		http.Error(w, "error in the storage system", http.StatusInternalServerError)
+	}
 
 	for _, userLink := range links {
 		if userLink.UserID == userID {
@@ -195,7 +200,7 @@ func (controller *MainController) ShortenBatch(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	userID, ok := r.Context().Value("userID").(uint32)
+	userID, ok := r.Context().Value(middleware.UserID("UserID")).(uint32)
 
 	if !ok {
 		http.Error(w, "wrong user ID", http.StatusInternalServerError)
@@ -203,7 +208,7 @@ func (controller *MainController) ShortenBatch(w http.ResponseWriter, r *http.Re
 	}
 
 	for _, batchLink := range batchLinks {
-		lastURLID, addErr := controller.LinkRepository.AddLink(batchLink.OriginalUrl, userID)
+		lastURLID, addErr := controller.LinkRepository.AddLink(batchLink.OriginalURL, userID)
 
 		if addErr != nil {
 			http.Error(w, addErr.Error(), http.StatusInternalServerError)
@@ -211,8 +216,8 @@ func (controller *MainController) ShortenBatch(w http.ResponseWriter, r *http.Re
 		}
 
 		responseLinks = append(responseLinks, dto.ResponseBatchLink{
-			CorrelationId: batchLink.CorrelationId,
-			ShortUrl:      generateShortLink(lastURLID, controller.Config.BaseURL),
+			CorrelationID: batchLink.CorrelationID,
+			ShortURL:      generateShortLink(lastURLID, controller.Config.BaseURL),
 		})
 	}
 

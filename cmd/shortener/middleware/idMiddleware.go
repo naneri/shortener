@@ -53,7 +53,7 @@ func IDMiddleware(next http.Handler) http.Handler {
 		}
 
 		ctx := r.Context()
-		req := r.WithContext(context.WithValue(ctx, "userID", userID))
+		req := r.WithContext(context.WithValue(ctx, UserID("UserId"), userID))
 		*r = *req
 		// else grant user the signed cookie with Unique identifier
 		next.ServeHTTP(w, r)

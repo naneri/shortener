@@ -57,12 +57,12 @@ func (repo *DatabaseRepository) AddLink(link string, userID uint32) (int, error)
 
 		if errors.As(err, &pgError) {
 			if pgError.Code == pgerrcode.UniqueViolation {
-				linkId, queryErr := repo.getLinkIdByUrl(ctx, link)
+				linkID, queryErr := repo.getLinkIDByURL(ctx, link)
 
 				if queryErr != nil {
 					return 0, queryErr
 				}
-				return linkId, err
+				return linkID, err
 			}
 		}
 		return 0, err
@@ -71,7 +71,7 @@ func (repo *DatabaseRepository) AddLink(link string, userID uint32) (int, error)
 	return id, nil
 }
 
-func (repo *DatabaseRepository) getLinkIdByUrl(ctx context.Context, url string) (int, error) {
+func (repo *DatabaseRepository) getLinkIDByURL(ctx context.Context, url string) (int, error) {
 	row := repo.dbConnection.QueryRowContext(ctx, "SELECT id, user_id, link FROM links WHERE link = $1 LIMIT 1", url)
 
 	var dbLink Link
@@ -86,14 +86,18 @@ func (repo *DatabaseRepository) getLinkIdByUrl(ctx context.Context, url string) 
 
 }
 
-func (repo *DatabaseRepository) GetAllLinks() map[string]*Link {
+func (repo *DatabaseRepository) GetAllLinks() (map[string]*Link, error) {
 	links := make(map[string]*Link)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 
 	defer cancel()
 
-	rows, _ := repo.dbConnection.QueryContext(ctx, "SELECT id, user_id, link FROM public.links")
+	rows, err := repo.dbConnection.QueryContext(ctx, "SELECT id, user_id, link FROM public.links")
+
+	if err != nil {
+		return links, err
+	}
 
 	// обязательно закрываем перед возвратом функции
 	defer rows.Close()
@@ -105,5 +109,5 @@ func (repo *DatabaseRepository) GetAllLinks() map[string]*Link {
 		links[string(rune(link.ID))] = &link
 	}
 
-	return links
+	return links, nil
 }

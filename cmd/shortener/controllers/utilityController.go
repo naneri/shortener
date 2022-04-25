@@ -8,17 +8,16 @@ import (
 )
 
 type UtilityController struct {
-	DbConnection *sql.DB
+	DBConnection *sql.DB
 }
 
-func (cont *UtilityController) PingDb(w http.ResponseWriter, r *http.Request) {
+func (cont *UtilityController) PingDB(w http.ResponseWriter, r *http.Request) {
 
 	ctx, cancel := context.WithTimeout(r.Context(), 1*time.Second)
 	defer cancel()
-	if err := cont.DbConnection.PingContext(ctx); err != nil {
+	if err := cont.DBConnection.PingContext(ctx); err != nil {
 		http.Error(w, "error when pinging database", http.StatusInternalServerError)
 	}
 
 	w.WriteHeader(http.StatusOK)
-	return
 }

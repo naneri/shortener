@@ -97,7 +97,7 @@ func mainHandler() *chi.Mux {
 	}
 
 	utilityController := controllers.UtilityController{
-		DbConnection: db,
+		DBConnection: db,
 	}
 
 	r.Use(middleware.GzipMiddleware)
@@ -106,7 +106,7 @@ func mainHandler() *chi.Mux {
 	r.Post("/api/shorten", mainController.ShortenURL)
 	r.Get("/{url}", mainController.GetURL)
 	r.Get("/api/user/urls", mainController.UserUrls)
-	r.Get("/ping", utilityController.PingDb)
+	r.Get("/ping", utilityController.PingDB)
 	r.Post("/api/shorten/batch", mainController.ShortenBatch)
 
 	return r
