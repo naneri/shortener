@@ -95,7 +95,7 @@ func (repo *DatabaseRepository) GetAllLinks() (map[string]*Link, error) {
 
 	rows, err := repo.dbConnection.QueryContext(ctx, "SELECT id, user_id, link FROM public.links")
 
-	if err != nil {
+	if err != nil || rows.Err() != nil {
 		return links, err
 	}
 
