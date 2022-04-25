@@ -52,16 +52,17 @@ func (repo *DatabaseRepository) AddLink(link string, userID uint32) (int, error)
 	var id int
 
 	if err := repo.dbConnection.QueryRowContext(ctx, "INSERT INTO public.links(user_id, link) VALUES ($1, $2) RETURNING id", userID, link).Scan(&id); err != nil {
-
 		var pgError *pq.Error
 
 		if errors.As(err, &pgError) {
+
 			if pgError.Code == pgerrcode.UniqueViolation {
 				linkID, queryErr := repo.getLinkIDByURL(ctx, link)
 
 				if queryErr != nil {
 					return 0, queryErr
 				}
+
 				return linkID, err
 			}
 		}

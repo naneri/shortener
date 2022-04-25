@@ -113,9 +113,6 @@ func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	w.Header().Set("content-type", "plain/text")
-	w.WriteHeader(http.StatusCreated)
-
 	lastURLID, err := controller.LinkRepository.AddLink(string(body), userID)
 
 	if err != nil {
@@ -136,6 +133,8 @@ func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	w.Header().Set("content-type", "plain/text")
+	w.WriteHeader(http.StatusCreated)
 	shortLink := generateShortLink(lastURLID, controller.Config.BaseURL)
 	_, _ = w.Write([]byte(shortLink))
 }
