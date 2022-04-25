@@ -1,5 +1,5 @@
 package middleware
 
-const UserIdContextKey = "UserId"
+const UserIDContextKey = "UserID"
 
 type UserID string

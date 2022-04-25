@@ -39,7 +39,7 @@ func (controller *MainController) ShortenURL(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	userID, ok := r.Context().Value(middleware.UserID(middleware.UserIdContextKey)).(uint32)
+	userID, ok := r.Context().Value(middleware.UserID(middleware.UserIDContextKey)).(uint32)
 
 	if !ok {
 		http.Error(w, "wrong user ID", http.StatusInternalServerError)
@@ -106,7 +106,7 @@ func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	userID, ok := r.Context().Value(middleware.UserID(middleware.UserIdContextKey)).(uint32)
+	userID, ok := r.Context().Value(middleware.UserID(middleware.UserIDContextKey)).(uint32)
 
 	if !ok {
 		http.Error(w, "wrong user ID", http.StatusInternalServerError)
@@ -142,7 +142,7 @@ func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request
 
 func (controller *MainController) UserUrls(w http.ResponseWriter, r *http.Request) {
 	var userLinks []dto.ListLink
-	userID, ok := r.Context().Value(middleware.UserID(middleware.UserIdContextKey)).(uint32)
+	userID, ok := r.Context().Value(middleware.UserID(middleware.UserIDContextKey)).(uint32)
 
 	if !ok {
 		http.Error(w, "wrong user ID", http.StatusInternalServerError)
@@ -200,7 +200,7 @@ func (controller *MainController) ShortenBatch(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	userID, ok := r.Context().Value(middleware.UserID(middleware.UserIdContextKey)).(uint32)
+	userID, ok := r.Context().Value(middleware.UserID(middleware.UserIDContextKey)).(uint32)
 
 	if !ok {
 		http.Error(w, "wrong user ID", http.StatusInternalServerError)
