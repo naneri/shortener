@@ -50,6 +50,7 @@ func (controller *MainController) ShortenURL(w http.ResponseWriter, r *http.Requ
 
 	if err != nil {
 		if lastURLID != 0 {
+			w.Header().Set("Content-Type", "application/json")
 			shortenedURL := generateShortLink(lastURLID, controller.Config.BaseURL)
 			w.WriteHeader(http.StatusConflict)
 			_, err = w.Write([]byte(shortenedURL))
