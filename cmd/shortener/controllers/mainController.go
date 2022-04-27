@@ -13,8 +13,8 @@ import (
 )
 
 type MainController struct {
-	DB     link.Repository // <--
-	Config config.Config
+	LinkRepository link.Repository // <--
+	Config         config.Config
 }
 
 func (controller *MainController) ShortenURL(w http.ResponseWriter, r *http.Request) {
@@ -25,27 +25,44 @@ func (controller *MainController) ShortenURL(w http.ResponseWriter, r *http.Requ
 	var requestBody dto.ShortenerDto
 
 	body, err := middleware.ReadBody(r)
+
 	// обрабатываем ошибку
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	err = json.Unmarshal(body, &requestBody)
 
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	//if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
-	//	log.Printf("io.ReadAll: %v\n", err)
-	//	http.Error(w, "unable to read request body", http.StatusBadRequest)
-	//	return
-	//}
 
-	lastURLID, err := controller.DB.AddLink(requestBody.URL)
+	userID, ok := r.Context().Value(middleware.UserID(middleware.UserIDContextKey)).(uint32)
+
+	if !ok {
+		http.Error(w, "wrong user ID", http.StatusInternalServerError)
+		return
+	}
+
+	lastURLID, err := controller.LinkRepository.AddLink(requestBody.URL, userID)
 
 	if err != nil {
+		if lastURLID != 0 {
+			responseStruct := response{Result: generateShortLink(lastURLID, controller.Config.BaseURL)}
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusConflict)
+
+			err = json.NewEncoder(w).Encode(responseStruct)
+
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			return
+		}
 		log.Print("error when adding a link:" + err.Error())
 		http.Error(w, "error shortening the link.", http.StatusInternalServerError)
 	}
@@ -66,20 +83,21 @@ func (controller *MainController) GetURL(w http.ResponseWriter, r *http.Request)
 	urlID := chi.URLParam(r, "url")
 
 	if urlID == "" {
-		fmt.Println("URL not found")
+		fmt.Println("empty URL")
+		http.Error(w, "The URL param is empty", http.StatusNotFound)
+		return
+	}
+
+	val, err := controller.LinkRepository.GetLink(urlID)
+
+	if err != nil {
+		fmt.Println("URL not found: " + err.Error())
 		http.Error(w, "The URL not found", http.StatusNotFound)
 		return
 	}
 
-	if val, err := controller.DB.GetLink(urlID); err == nil {
-		w.Header().Set("Location", val)
-		w.WriteHeader(http.StatusTemporaryRedirect)
-		return
-	} else {
-		fmt.Println("URL not found")
-		http.Error(w, "The URL not found", http.StatusNotFound)
-		return
-	}
+	w.Header().Set("Location", val)
+	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
 func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request) {
@@ -90,13 +108,133 @@ func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	userID, ok := r.Context().Value(middleware.UserID(middleware.UserIDContextKey)).(uint32)
+
+	if !ok {
+		http.Error(w, "wrong user ID", http.StatusInternalServerError)
+		return
+	}
+
+	lastURLID, err := controller.LinkRepository.AddLink(string(body), userID)
+
+	if err != nil {
+		if lastURLID != 0 {
+			shortenedURL := generateShortLink(lastURLID, controller.Config.BaseURL)
+			w.WriteHeader(http.StatusConflict)
+			_, err = w.Write([]byte(shortenedURL))
+
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			return
+		}
+
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.Header().Set("content-type", "plain/text")
 	w.WriteHeader(http.StatusCreated)
-
-	lastURLID, _ := controller.DB.AddLink(string(body))
-
 	shortLink := generateShortLink(lastURLID, controller.Config.BaseURL)
 	_, _ = w.Write([]byte(shortLink))
+}
+
+func (controller *MainController) UserUrls(w http.ResponseWriter, r *http.Request) {
+	var userLinks []dto.ListLink
+	userID, ok := r.Context().Value(middleware.UserID(middleware.UserIDContextKey)).(uint32)
+
+	if !ok {
+		http.Error(w, "wrong user ID", http.StatusInternalServerError)
+		return
+	}
+
+	links, dbErr := controller.LinkRepository.GetAllLinks()
+
+	if dbErr != nil {
+		log.Println("Error getting data from the storage: " + dbErr.Error())
+		http.Error(w, "error in the storage system", http.StatusInternalServerError)
+	}
+
+	for _, userLink := range links {
+		if userLink.UserID == userID {
+			dtoLink := dto.ListLink{
+				ShortURL:    generateShortLink(userLink.ID, controller.Config.BaseURL),
+				OriginalURL: userLink.URL,
+			}
+			userLinks = append(userLinks, dtoLink)
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if len(userLinks) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	err := json.NewEncoder(w).Encode(userLinks)
+
+	if err != nil {
+		http.Error(w, "error generating response", http.StatusInternalServerError)
+		return
+	}
+
+}
+
+func (controller *MainController) ShortenBatch(w http.ResponseWriter, r *http.Request) {
+	var batchLinks []dto.BatchLink
+	responseLinks := make([]dto.ResponseBatchLink, 0, 8)
+
+	body, err := middleware.ReadBody(r)
+
+	// обрабатываем ошибку
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = json.Unmarshal(body, &batchLinks)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	userID, ok := r.Context().Value(middleware.UserID(middleware.UserIDContextKey)).(uint32)
+
+	if !ok {
+		http.Error(w, "wrong user ID", http.StatusInternalServerError)
+		return
+	}
+
+	for _, batchLink := range batchLinks {
+		lastURLID, addErr := controller.LinkRepository.AddLink(batchLink.OriginalURL, userID)
+
+		if addErr != nil {
+			http.Error(w, addErr.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		responseLinks = append(responseLinks, dto.ResponseBatchLink{
+			CorrelationID: batchLink.CorrelationID,
+			ShortURL:      generateShortLink(lastURLID, controller.Config.BaseURL),
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if len(responseLinks) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	encodeErr := json.NewEncoder(w).Encode(responseLinks)
+
+	if encodeErr != nil {
+		http.Error(w, "error generating response", http.StatusInternalServerError)
+		return
+	}
 }
 
 func generateShortLink(lastURLID int, baseURL string) string {

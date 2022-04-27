@@ -9,6 +9,7 @@ import (
 func ReadBody(r *http.Request) ([]byte, error) {
 	var reader io.Reader
 
+	// had problems with replacing the default request.Body with the gz and because of that moved all the reading logic to this function
 	if r.Header.Get(`Content-Encoding`) == `gzip` {
 		gz, err := gzip.NewReader(r.Body)
 		if err != nil {

@@ -11,22 +11,16 @@ import (
 )
 
 type FileRepository struct {
-	lastURLID int
-	storage   map[string]string
+	fileStorage *os.File
+	lastURLID   int
+	storage     map[string]*Link
 }
-
-type Link struct {
-	ID  int    `json:"id"`
-	URL string `json:"url"`
-}
-
-var fileStorage *os.File
 
 func InitFileRepo(file *os.File) (*FileRepository, error) {
-	fileStorage = file
 	repo := FileRepository{
-		lastURLID: 0,
-		storage:   make(map[string]string),
+		lastURLID:   0,
+		storage:     make(map[string]*Link),
+		fileStorage: file,
 	}
 
 	if file != nil {
@@ -53,25 +47,32 @@ func readAllLinks(file *os.File, repo *FileRepository) error {
 			}
 		}
 
-		repo.storage[strconv.Itoa(readedLink.ID)] = readedLink.URL
+		repo.storage[strconv.Itoa(readedLink.ID)] = readedLink
 	}
 
 	return nil
 }
 
-func (repo *FileRepository) AddLink(link string) (int, error) {
+func (repo *FileRepository) AddLink(link string, userID uint32) (int, error) {
 	repo.lastURLID++
-	repo.storage[strconv.Itoa(repo.lastURLID)] = link
 
-	if fileStorage != nil {
-		linkProducer, err := NewProducer(fileStorage)
+	newLink := Link{
+		ID:     repo.lastURLID,
+		UserID: userID,
+		URL:    link,
+	}
+	repo.storage[strconv.Itoa(repo.lastURLID)] = &newLink
+
+	if repo.fileStorage != nil {
+		linkProducer, err := NewProducer(repo.fileStorage)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		newLink := Link{
-			ID:  repo.lastURLID,
-			URL: link,
+			ID:     repo.lastURLID,
+			UserID: userID,
+			URL:    link,
 		}
 
 		if err := linkProducer.WriteLink(&newLink); err != nil {
@@ -84,10 +85,14 @@ func (repo *FileRepository) AddLink(link string) (int, error) {
 
 func (repo *FileRepository) GetLink(urlID string) (string, error) {
 	if val, ok := repo.storage[urlID]; ok {
-		return val, nil
+		return val.URL, nil
 	} else {
 		return "", errors.New("record not found")
 	}
+}
+
+func (repo *FileRepository) GetAllLinks() (map[string]*Link, error) {
+	return repo.storage, nil
 }
 
 type producer struct {
@@ -127,6 +132,7 @@ func (c *consumer) ReadLink() (*Link, error) {
 	if err := c.decoder.Decode(&link); err != nil {
 		return nil, err
 	}
+
 	return link, nil
 }
 
