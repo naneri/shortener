@@ -139,3 +139,8 @@ func (c *consumer) ReadLink() (*Link, error) {
 func (c *consumer) Close() error {
 	return c.file.Close()
 }
+
+func (repo *FileRepository) DeleteLinks(ids []string) error {
+
+	return nil
+}

@@ -33,3 +33,8 @@ func (repo *MemoryRepository) GetLink(urlID string) (string, error) {
 		return "", errors.New("record not found")
 	}
 }
+
+func (repo *MemoryRepository) DeleteLinks(ids []string) error {
+
+	return nil
+}

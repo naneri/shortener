@@ -6,6 +6,7 @@ import (
 	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
 	_ "github.com/jackc/pgx/v4/stdlib"
+	_ "github.com/joho/godotenv/autoload"
 	"github.com/naneri/shortener/cmd/shortener/config"
 	"github.com/naneri/shortener/cmd/shortener/controllers"
 	"github.com/naneri/shortener/cmd/shortener/middleware"
@@ -106,6 +107,7 @@ func mainHandler() *chi.Mux {
 	r.Post("/api/shorten", mainController.ShortenURL)
 	r.Get("/{url}", mainController.GetURL)
 	r.Get("/api/user/urls", mainController.UserUrls)
+	r.Delete("/api/user/urls", mainController.DeleteUserUrls)
 	r.Get("/ping", utilityController.PingDB)
 	r.Post("/api/shorten/batch", mainController.ShortenBatch)
 

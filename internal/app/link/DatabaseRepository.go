@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"github.com/jackc/pgerrcode"
 	"github.com/lib/pq"
 	"strconv"
@@ -31,14 +32,18 @@ func (repo *DatabaseRepository) GetLink(urlID string) (string, error) {
 		return "", errors.New("unable to parse integer: " + urlID)
 	}
 
-	row := repo.dbConnection.QueryRowContext(ctx, "SELECT id, user_id, link FROM links WHERE id = $1 LIMIT 1", number)
+	row := repo.dbConnection.QueryRowContext(ctx, "SELECT id, user_id, link, deleted_at FROM links WHERE id = $1 LIMIT 1", number)
 
 	var dbLink Link
 
-	err = row.Scan(&dbLink.ID, &dbLink.UserID, &dbLink.URL)
+	err = row.Scan(&dbLink.ID, &dbLink.UserID, &dbLink.URL, &dbLink.DeletedAt)
 
 	if err != nil {
 		return "", err
+	}
+
+	if dbLink.DeletedAt.Valid {
+		return dbLink.URL, &ModelDeletedError{msg: fmt.Sprintf("Deleted on:" + dbLink.DeletedAt.Time.String())}
 	}
 
 	return dbLink.URL, nil
@@ -111,4 +116,52 @@ func (repo *DatabaseRepository) GetAllLinks() (map[string]*Link, error) {
 	}
 
 	return links, nil
+}
+
+func (repo *DatabaseRepository) DeleteLinks(ids []string) error {
+	linksToDelete := make([]int, 0, len(ids))
+
+	for _, id := range ids {
+		i, scanErr := strconv.Atoi(id)
+
+		if scanErr != nil {
+			return fmt.Errorf("error parsing ids: %v", scanErr)
+		}
+
+		linksToDelete = append(linksToDelete, i)
+	}
+
+	ctx := context.Background()
+
+	tx, err := repo.dbConnection.Begin()
+	if err != nil {
+		return err
+	}
+	// шаг 1.1 — если возникает ошибка, откатываем изменения
+	defer tx.Rollback()
+
+	// шаг 2 — готовим инструкцию
+	stmt, err := tx.PrepareContext(ctx, `
+					UPDATE links
+					SET deleted_at = $1
+					WHERE id = $2
+				`)
+
+	if err != nil {
+		return err
+	}
+
+	defer stmt.Close()
+
+	for _, linkId := range linksToDelete {
+		if _, updateErr := stmt.ExecContext(ctx, time.Now(), linkId); updateErr != nil {
+			return fmt.Errorf("error deleting the links: %v", updateErr)
+		}
+	}
+
+	if commitErr := tx.Commit(); commitErr != nil {
+		return fmt.Errorf("error deleting the links: %v", commitErr)
+	}
+
+	return nil
 }
