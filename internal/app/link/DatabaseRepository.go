@@ -153,8 +153,8 @@ func (repo *DatabaseRepository) DeleteLinks(ids []string) error {
 
 	defer stmt.Close()
 
-	for _, linkId := range linksToDelete {
-		if _, updateErr := stmt.ExecContext(ctx, time.Now(), linkId); updateErr != nil {
+	for _, linkID := range linksToDelete {
+		if _, updateErr := stmt.ExecContext(ctx, time.Now(), linkID); updateErr != nil {
 			return fmt.Errorf("error deleting the links: %v", updateErr)
 		}
 	}
