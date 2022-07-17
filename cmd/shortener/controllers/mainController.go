@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/naneri/shortener/cmd/shortener/config"
@@ -91,9 +92,16 @@ func (controller *MainController) GetURL(w http.ResponseWriter, r *http.Request)
 	val, err := controller.LinkRepository.GetLink(urlID)
 
 	if err != nil {
-		fmt.Println("URL not found: " + err.Error())
-		http.Error(w, "The URL not found", http.StatusNotFound)
-		return
+		var modelDeletedErr *link.ModelDeletedError
+
+		if errors.As(err, &modelDeletedErr) {
+			w.Header().Set("content-type", "plain/text")
+			w.WriteHeader(http.StatusGone)
+		} else {
+			fmt.Println("URL not found: " + err.Error())
+			http.Error(w, "The URL not found", http.StatusNotFound)
+			return
+		}
 	}
 
 	w.Header().Set("Location", val)
@@ -235,6 +243,37 @@ func (controller *MainController) ShortenBatch(w http.ResponseWriter, r *http.Re
 		http.Error(w, "error generating response", http.StatusInternalServerError)
 		return
 	}
+}
+
+func (controller *MainController) DeleteUserUrls(w http.ResponseWriter, r *http.Request) {
+	var urlIds []string
+
+	body, err := middleware.ReadBody(r)
+
+	// обрабатываем ошибку
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = json.Unmarshal(body, &urlIds)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("content-type", "plain/text")
+	w.WriteHeader(http.StatusAccepted)
+
+	go func() {
+		deleteErr := controller.LinkRepository.DeleteLinks(urlIds)
+		if deleteErr != nil {
+			log.Println("error deleting links: " + deleteErr.Error())
+		} else {
+			log.Println("links deleted ")
+		}
+	}()
 }
 
 func generateShortLink(lastURLID int, baseURL string) string {

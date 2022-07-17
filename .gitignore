@@ -22,3 +22,4 @@ vendor/
 .idea
 .vscode
 cmd/shortener/links.txt
+cmd/shortener/.env
