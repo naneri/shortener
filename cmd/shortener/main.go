@@ -14,6 +14,7 @@ import (
 	"github.com/naneri/shortener/internal/migrations"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 )
 
@@ -81,7 +82,10 @@ func main() {
 	r := mainHandler()
 
 	log.Println("Server started at port " + cfg.ServerAddress)
-	http.ListenAndServe(cfg.ServerAddress, r)
+	go func() {
+		log.Println(http.ListenAndServe(":8081", nil))
+	}()
+	log.Println(http.ListenAndServe(cfg.ServerAddress, r))
 }
 
 func mainHandler() *chi.Mux {
