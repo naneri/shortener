@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"fmt"
 	"github.com/caarlos0/env/v6"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	_ "github.com/joho/godotenv/autoload"
@@ -60,7 +61,12 @@ func main() {
 
 	if cfg.FileStoragePath != "" {
 		file, err = os.OpenFile(cfg.FileStoragePath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
-		defer file.Close()
+		defer func(file *os.File) {
+			closeErr := file.Close()
+			if closeErr != nil {
+				fmt.Println("error closing file: " + closeErr.Error())
+			}
+		}(file)
 
 		if err != nil {
 			log.Fatal("error opening the file")
@@ -79,7 +85,7 @@ func main() {
 	appRouter := router.Router{
 		Repository: linkRepository,
 		Config:     cfg,
-		Db:         db,
+		DB:         db,
 	}
 
 	log.Println("Server started at port " + cfg.ServerAddress)

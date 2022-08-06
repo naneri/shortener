@@ -12,7 +12,7 @@ import (
 type Router struct {
 	Repository link.Repository
 	Config     config.Config
-	Db         *sql.DB
+	DB         *sql.DB
 }
 
 func (router *Router) GetHandler() *chi.Mux {
@@ -24,7 +24,7 @@ func (router *Router) GetHandler() *chi.Mux {
 	}
 
 	utilityController := controllers.UtilityController{
-		DBConnection: router.Db,
+		DBConnection: router.DB,
 	}
 
 	r.Use(middleware.GzipMiddleware)
