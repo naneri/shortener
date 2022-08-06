@@ -28,14 +28,12 @@ func IDMiddleware(next http.Handler) http.Handler {
 
 		// can I make this code prettier?
 		if err != nil {
-			fmt.Println("error getting cookie: " + err.Error())
 			httpCookie := generateUserCookie()
 			http.SetCookie(w, &httpCookie)
 		} else {
 			data, err = hex.DecodeString(cookie.Value)
 
 			if err != nil {
-				fmt.Println("error decoding cookie: " + err.Error())
 				httpCookie := generateUserCookie()
 				http.SetCookie(w, &httpCookie)
 			} else {

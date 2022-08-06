@@ -115,7 +115,7 @@ func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request
 	body, err := middleware.ReadBody(r)
 	// обрабатываем ошибку
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "error reading body: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -135,14 +135,14 @@ func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request
 			_, err = w.Write([]byte(shortenedURL))
 
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, "error generating short link: "+err.Error(), http.StatusInternalServerError)
 				return
 			}
 
 			return
 		}
 
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "error with data storge: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
