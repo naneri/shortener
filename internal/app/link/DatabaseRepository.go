@@ -120,11 +120,12 @@ func (repo *DatabaseRepository) GetAllLinks() (map[string]*Link, error) {
 }
 
 func (repo *DatabaseRepository) DeleteLinks(ids []string) error {
-
 	concatenatedLinks := strings.Join(ids, ",")
 
-	_, err := repo.dbConnection.Exec(fmt.Sprintf("DELETE FROM public.links WHERE id IN %s", concatenatedLinks))
-
+	_, err := repo.dbConnection.Exec("UPDATE public.links SET deleted_at = ? WHERE id IN ?", time.Now(), concatenatedLinks)
+	if err != nil {
+		fmt.Println(err)
+	}
 	return err
 }
 

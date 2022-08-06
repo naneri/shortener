@@ -88,33 +88,3 @@ func main() {
 	}()
 	log.Println(http.ListenAndServe(cfg.ServerAddress, appRouter.GetHandler()))
 }
-
-//func mainHandler() *chi.Mux {
-//	r := chi.NewRouter()
-//
-//	// if I don't do this, the main_test.go will fail as it only tests this handler and MainController does need the Repo
-//	if linkRepository == nil {
-//		linkRepository, _ = link.InitFileRepo(nil)
-//	}
-//
-//	mainController := controllers.MainController{
-//		LinkRepository: linkRepository,
-//		Config:         cfg,
-//	}
-//
-//	utilityController := controllers.UtilityController{
-//		DBConnection: db,
-//	}
-//
-//	r.Use(middleware.GzipMiddleware)
-//	r.Use(middleware.IDMiddleware)
-//	r.Post("/", mainController.PostURL)
-//	r.Post("/api/shorten", mainController.ShortenURL)
-//	r.Get("/{url}", mainController.GetURL)
-//	r.Get("/api/user/urls", mainController.UserUrls)
-//	r.Delete("/api/user/urls", mainController.DeleteUserUrls)
-//	r.Get("/ping", utilityController.PingDB)
-//	r.Post("/api/shorten/batch", mainController.ShortenBatch)
-//
-//	return r
-//}
