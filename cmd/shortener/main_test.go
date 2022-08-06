@@ -30,7 +30,7 @@ func Test_indexHandler(t *testing.T) {
 		log.Fatalf("unable to parse env vars: %v", err)
 	}
 
-	linkRepo := link.InitMemoryRepo()
+	linkRepo, _ := link.InitFileRepo(nil)
 
 	appRouter := router.Router{
 		Repository: linkRepo,
