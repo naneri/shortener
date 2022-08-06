@@ -4,12 +4,10 @@ import (
 	"database/sql"
 	"flag"
 	"github.com/caarlos0/env/v6"
-	"github.com/go-chi/chi/v5"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	_ "github.com/joho/godotenv/autoload"
 	"github.com/naneri/shortener/cmd/shortener/config"
-	"github.com/naneri/shortener/cmd/shortener/controllers"
-	"github.com/naneri/shortener/cmd/shortener/middleware"
+	"github.com/naneri/shortener/cmd/shortener/router"
 	"github.com/naneri/shortener/internal/app/link"
 	"github.com/naneri/shortener/internal/migrations"
 	"log"
@@ -62,12 +60,7 @@ func main() {
 
 	if cfg.FileStoragePath != "" {
 		file, err = os.OpenFile(cfg.FileStoragePath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
-		defer func(file *os.File) {
-			fileCloseErr := file.Close()
-			if fileCloseErr != nil {
-				log.Fatal("error when closing file: " + fileCloseErr.Error())
-			}
-		}(file)
+		defer file.Close()
 
 		if err != nil {
 			log.Fatal("error opening the file")
@@ -79,41 +72,45 @@ func main() {
 		}
 	}
 
-	r := mainHandler()
+	appRouter := router.Router{
+		Repository: linkRepository,
+		Config:     cfg,
+		Db:         db,
+	}
 
 	log.Println("Server started at port " + cfg.ServerAddress)
 	go func() {
-		log.Println(http.ListenAndServe(":8081", nil))
+		log.Println(http.ListenAndServe(":8087", nil))
 	}()
-	log.Println(http.ListenAndServe(cfg.ServerAddress, r))
+	log.Println(http.ListenAndServe(cfg.ServerAddress, appRouter.GetHandler()))
 }
 
-func mainHandler() *chi.Mux {
-	r := chi.NewRouter()
-
-	// if I don't do this, the main_test.go will fail as it only tests this handler and MainController does need the Repo
-	if linkRepository == nil {
-		linkRepository, _ = link.InitFileRepo(nil)
-	}
-
-	mainController := controllers.MainController{
-		LinkRepository: linkRepository,
-		Config:         cfg,
-	}
-
-	utilityController := controllers.UtilityController{
-		DBConnection: db,
-	}
-
-	r.Use(middleware.GzipMiddleware)
-	r.Use(middleware.IDMiddleware)
-	r.Post("/", mainController.PostURL)
-	r.Post("/api/shorten", mainController.ShortenURL)
-	r.Get("/{url}", mainController.GetURL)
-	r.Get("/api/user/urls", mainController.UserUrls)
-	r.Delete("/api/user/urls", mainController.DeleteUserUrls)
-	r.Get("/ping", utilityController.PingDB)
-	r.Post("/api/shorten/batch", mainController.ShortenBatch)
-
-	return r
-}
+//func mainHandler() *chi.Mux {
+//	r := chi.NewRouter()
+//
+//	// if I don't do this, the main_test.go will fail as it only tests this handler and MainController does need the Repo
+//	if linkRepository == nil {
+//		linkRepository, _ = link.InitFileRepo(nil)
+//	}
+//
+//	mainController := controllers.MainController{
+//		LinkRepository: linkRepository,
+//		Config:         cfg,
+//	}
+//
+//	utilityController := controllers.UtilityController{
+//		DBConnection: db,
+//	}
+//
+//	r.Use(middleware.GzipMiddleware)
+//	r.Use(middleware.IDMiddleware)
+//	r.Post("/", mainController.PostURL)
+//	r.Post("/api/shorten", mainController.ShortenURL)
+//	r.Get("/{url}", mainController.GetURL)
+//	r.Get("/api/user/urls", mainController.UserUrls)
+//	r.Delete("/api/user/urls", mainController.DeleteUserUrls)
+//	r.Get("/ping", utilityController.PingDB)
+//	r.Post("/api/shorten/batch", mainController.ShortenBatch)
+//
+//	return r
+//}

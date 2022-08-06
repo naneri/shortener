@@ -14,6 +14,7 @@ import (
 var secretKey = []byte("secret key")
 var userID uint32
 
+// IDMiddleware generates user IDs for those who use the App
 func IDMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var (

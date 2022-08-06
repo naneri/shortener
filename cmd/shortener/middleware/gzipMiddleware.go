@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// GzipMiddleware checks the headers and outputs the gzipped body in case that it is required
 func GzipMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 

@@ -18,6 +18,7 @@ type MainController struct {
 	Config         config.Config
 }
 
+// ShortenURL shortens a URL passed by user
 func (controller *MainController) ShortenURL(w http.ResponseWriter, r *http.Request) {
 	type response struct {
 		Result string `json:"result"`
@@ -80,6 +81,7 @@ func (controller *MainController) ShortenURL(w http.ResponseWriter, r *http.Requ
 	}
 }
 
+// GetURL gets a URL from the storage if the urlID exists
 func (controller *MainController) GetURL(w http.ResponseWriter, r *http.Request) {
 	urlID := chi.URLParam(r, "url")
 
@@ -108,6 +110,7 @@ func (controller *MainController) GetURL(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
+// PostURL stores a URL provided by use, almost identical to ShortenURL
 func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request) {
 	body, err := middleware.ReadBody(r)
 	// обрабатываем ошибку
@@ -149,6 +152,7 @@ func (controller *MainController) PostURL(w http.ResponseWriter, r *http.Request
 	_, _ = w.Write([]byte(shortLink))
 }
 
+// UserUrls shows a list of user shortened URLs
 func (controller *MainController) UserUrls(w http.ResponseWriter, r *http.Request) {
 	var userLinks []dto.ListLink
 	userID, ok := r.Context().Value(middleware.UserID(middleware.UserIDContextKey)).(uint32)
@@ -190,6 +194,7 @@ func (controller *MainController) UserUrls(w http.ResponseWriter, r *http.Reques
 
 }
 
+// ShortenBatch shortens a batch of user URLs
 func (controller *MainController) ShortenBatch(w http.ResponseWriter, r *http.Request) {
 	var batchLinks []dto.BatchLink
 	responseLinks := make([]dto.ResponseBatchLink, 0, 8)
@@ -245,6 +250,7 @@ func (controller *MainController) ShortenBatch(w http.ResponseWriter, r *http.Re
 	}
 }
 
+// DeleteUserUrls deletes URLs of the user, that a taken from a list that the user has provided.
 func (controller *MainController) DeleteUserUrls(w http.ResponseWriter, r *http.Request) {
 	var urlIds []string
 

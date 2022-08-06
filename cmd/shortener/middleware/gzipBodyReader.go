@@ -6,6 +6,7 @@ import (
 	"net/http"
 )
 
+// ReadBody reads the body and checks if it is gzipped or not
 func ReadBody(r *http.Request) ([]byte, error) {
 	var reader io.Reader
 

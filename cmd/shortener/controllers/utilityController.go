@@ -11,6 +11,7 @@ type UtilityController struct {
 	DBConnection *sql.DB
 }
 
+// PingDB - pings the database to see if it has connected
 func (cont *UtilityController) PingDB(w http.ResponseWriter, r *http.Request) {
 
 	ctx, cancel := context.WithTimeout(r.Context(), 1*time.Second)
