@@ -12,7 +12,6 @@ import (
 	"github.com/naneri/shortener/internal/migrations"
 	"log"
 	"net/http"
-	_ "net/http/pprof"
 	"os"
 )
 
@@ -79,9 +78,7 @@ func main() {
 	}
 
 	log.Println("Server started at port " + cfg.ServerAddress)
-	go func() {
-		log.Println(http.ListenAndServe(":8087", nil))
-	}()
+
 	log.Println(http.ListenAndServe(cfg.ServerAddress, appRouter.GetHandler()))
 }
 
