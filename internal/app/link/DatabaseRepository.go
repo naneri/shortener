@@ -120,7 +120,7 @@ func (repo *DatabaseRepository) GetAllLinks() (map[string]*Link, error) {
 }
 
 func (repo *DatabaseRepository) DeleteLinks(ids []string) error {
-	concatenatedLinks := strings.Join(ids, ",")
+	concatenatedLinks := strings.Join(ids, ", ")
 
 	fmt.Println(concatenatedLinks)
 
