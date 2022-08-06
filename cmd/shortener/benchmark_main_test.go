@@ -10,8 +10,8 @@ import (
 )
 
 var testUrls = []struct {
-	CorrelationId string
-	Url           string
+	CorrelationID string
+	URL           string
 }{
 	{
 		"1",
@@ -41,8 +41,8 @@ func BenchmarkMain(b *testing.B) {
 
 	for _, url := range testUrls {
 		batchLink := dto.BatchLink{
-			CorrelationID: url.CorrelationId,
-			OriginalURL:   url.Url,
+			CorrelationID: url.CorrelationID,
+			OriginalURL:   url.URL,
 		}
 
 		links = append(links, batchLink)
@@ -66,9 +66,9 @@ func BenchmarkMain(b *testing.B) {
 			ids := make([]string, len(links))
 			b.StopTimer()
 			for _, url := range links {
-				linkId, _ := dbRepo.AddLink(url.OriginalURL, 0)
+				linkID, _ := dbRepo.AddLink(url.OriginalURL, 0)
 
-				ids = append(ids, string(rune(linkId)))
+				ids = append(ids, string(rune(linkID)))
 			}
 
 			b.StartTimer()
