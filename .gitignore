@@ -24,3 +24,6 @@ vendor/
 .vscode
 cmd/shortener/links.txt
 cmd/shortener/.env
+/cmd/shortener/swagger/docs.go
+/cmd/shortener/swagger/swagger.json
+/cmd/shortener/swagger/swagger.yaml
