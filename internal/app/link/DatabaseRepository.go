@@ -124,7 +124,11 @@ func (repo *DatabaseRepository) DeleteLinks(ids []string) error {
 
 	fmt.Println(concatenatedLinks)
 
-	_, err := repo.dbConnection.Exec("UPDATE public.links SET deleted_at = $1 WHERE id IN $2", time.Now(), concatenatedLinks)
+	statement := `	UPDATE public.links 
+					SET deleted_at = $1 
+					WHERE id IN ($2);`
+
+	_, err := repo.dbConnection.Exec(statement, time.Now(), concatenatedLinks)
 
 	return err
 }
