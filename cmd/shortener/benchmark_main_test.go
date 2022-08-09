@@ -51,13 +51,13 @@ func BenchmarkMain(b *testing.B) {
 	b.ResetTimer()
 	b.Run("addBatchLinks", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
+			b.StartTimer()
 			for _, url := range links {
 				_, _ = dbRepo.AddLink(url.OriginalURL, 0)
 			}
 
 			b.StopTimer()
 			_ = dbRepo.DeleteAllLinks()
-			b.StartTimer()
 		}
 	})
 

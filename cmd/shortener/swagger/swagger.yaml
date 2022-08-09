@@ -1,0 +1,126 @@
+definitions:
+  controllers.ShortenResponse:
+    properties:
+      result:
+        type: string
+    type: object
+  dto.ListLink:
+    properties:
+      original_url:
+        description: OriginalURL - the original URL
+        type: string
+      short_url:
+        description: ShortURL - the shortened URL
+        type: string
+    type: object
+  dto.ResponseBatchLink:
+    properties:
+      correlation_id:
+        description: CorrelationID - the users ID that the user has passed initially
+          with the URL
+        type: string
+      short_url:
+        description: ShortURL - the result of the URL shortening
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /:
+    post:
+      consumes:
+      - text/plain
+      produces:
+      - text/plain
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "409":
+          description: Conflict
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: post URL (similar to ShortenURL)
+  /api/shorten:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/controllers.ShortenResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/controllers.ShortenResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Shorten URL endpoint
+  /api/shorten/batch:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            items:
+              $ref: '#/definitions/dto.ResponseBatchLink'
+            type: array
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Shorten multiple URLs in batch
+  /api/user/urls:
+    delete:
+      consumes:
+      - application/json
+      produces:
+      - text/plain
+      responses:
+        "202":
+          description: Accepted
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: deletes all urls of the User
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.ListLink'
+            type: array
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Lists user shortened URLs
+swagger: "2.0"

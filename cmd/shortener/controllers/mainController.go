@@ -211,6 +211,7 @@ func (controller *MainController) UserUrls(w http.ResponseWriter, r *http.Reques
 	err := json.NewEncoder(w).Encode(userLinks)
 
 	if err != nil {
+		log.Println("error generating shorten response when encoding user links: " + err.Error())
 		http.Error(w, "error generating ShortenResponse", http.StatusInternalServerError)
 		return
 	}
