@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgerrcode"
 	"github.com/lib/pq"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -119,49 +120,21 @@ func (repo *DatabaseRepository) GetAllLinks() (map[string]*Link, error) {
 }
 
 func (repo *DatabaseRepository) DeleteLinks(ids []string) error {
-	linksToDelete := make([]int, 0, len(ids))
+	concatenatedLinks := "{" + strings.Join(ids, ", ") + "}"
 
-	for _, id := range ids {
-		i, scanErr := strconv.Atoi(id)
+	fmt.Println(concatenatedLinks)
 
-		if scanErr != nil {
-			return fmt.Errorf("error parsing ids: %v", scanErr)
-		}
+	statement := `	UPDATE public.links 
+					SET deleted_at = $1 
+					WHERE id = ANY($2::int[]);`
 
-		linksToDelete = append(linksToDelete, i)
-	}
+	_, err := repo.dbConnection.Exec(statement, time.Now(), concatenatedLinks)
 
-	ctx := context.Background()
+	return err
+}
 
-	tx, err := repo.dbConnection.Begin()
-	if err != nil {
-		return err
-	}
-	// шаг 1.1 — если возникает ошибка, откатываем изменения
-	defer tx.Rollback()
+func (repo *DatabaseRepository) DeleteAllLinks() error {
+	_, err := repo.dbConnection.Exec("DELETE FROM public.links;")
 
-	// шаг 2 — готовим инструкцию
-	stmt, err := tx.PrepareContext(ctx, `
-					UPDATE links
-					SET deleted_at = $1
-					WHERE id = $2
-				`)
-
-	if err != nil {
-		return err
-	}
-
-	defer stmt.Close()
-
-	for _, linkID := range linksToDelete {
-		if _, updateErr := stmt.ExecContext(ctx, time.Now(), linkID); updateErr != nil {
-			return fmt.Errorf("error deleting the links: %v", updateErr)
-		}
-	}
-
-	if commitErr := tx.Commit(); commitErr != nil {
-		return fmt.Errorf("error deleting the links: %v", commitErr)
-	}
-
-	return nil
+	return err
 }

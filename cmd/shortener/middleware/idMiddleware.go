@@ -14,6 +14,7 @@ import (
 var secretKey = []byte("secret key")
 var userID uint32
 
+// IDMiddleware generates user IDs for those who use the App
 func IDMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var (
@@ -27,14 +28,12 @@ func IDMiddleware(next http.Handler) http.Handler {
 
 		// can I make this code prettier?
 		if err != nil {
-			fmt.Println("error getting cookie: " + err.Error())
 			httpCookie := generateUserCookie()
 			http.SetCookie(w, &httpCookie)
 		} else {
 			data, err = hex.DecodeString(cookie.Value)
 
 			if err != nil {
-				fmt.Println("error decoding cookie: " + err.Error())
 				httpCookie := generateUserCookie()
 				http.SetCookie(w, &httpCookie)
 			} else {

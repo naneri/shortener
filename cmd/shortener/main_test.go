@@ -2,6 +2,10 @@ package main
 
 import (
 	"bytes"
+	"github.com/caarlos0/env/v6"
+	"github.com/naneri/shortener/cmd/shortener/router"
+	"github.com/naneri/shortener/internal/app/link"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -20,6 +24,18 @@ type want struct {
 }
 
 func Test_indexHandler(t *testing.T) {
+	err := env.Parse(&cfg)
+
+	if err != nil {
+		log.Fatalf("unable to parse env vars: %v", err)
+	}
+
+	linkRepo, _ := link.InitFileRepo(nil)
+
+	appRouter := router.Router{
+		Repository: linkRepo,
+		Config:     cfg,
+	}
 
 	postRequest := httptest.NewRequest("POST", "/", bytes.NewReader([]byte(`{"url" : "https://google.com"}`)))
 	jsonPostRequest := httptest.NewRequest("POST", "/api/shorten", bytes.NewReader([]byte(`{"url" : "https://google.com"}`)))
@@ -30,7 +46,7 @@ func Test_indexHandler(t *testing.T) {
 			request: postRequest,
 			want: want{
 				code:        201,
-				response:    "/1",
+				response:    "http://localhost:8080/1",
 				contentType: "plain/text",
 			},
 		},
@@ -39,7 +55,7 @@ func Test_indexHandler(t *testing.T) {
 			request: jsonPostRequest,
 			want: want{
 				code:        201,
-				response:    `{"result":"/2"}`,
+				response:    `{"result":"http://localhost:8080/2"}`,
 				contentType: "application/json",
 			},
 		},
@@ -49,7 +65,7 @@ func Test_indexHandler(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			w := httptest.NewRecorder()
 			// определяем хендлер
-			r := mainHandler()
+			r := appRouter.GetHandler()
 			h := http.HandlerFunc(r.ServeHTTP)
 			// запускаем сервер
 			h.ServeHTTP(w, test.request)
