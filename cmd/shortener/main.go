@@ -93,4 +93,6 @@ func main() {
 		log.Println(http.ListenAndServe(":8087", nil))
 	}()
 	log.Println(http.ListenAndServe(cfg.ServerAddress, appRouter.GetHandler()))
+
+	os.Exit(0)
 }
