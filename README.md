@@ -22,3 +22,7 @@ git fetch template && git checkout template/main .github
 
 Затем добавьте полученные изменения в свой репозиторий.
 
+
+
+Starting the server with flags set: 
+`go run -ldflags "-X main.buildVersion=v1.0.1 -X 'main.buildDate=$(date +'%Y/%m/%d')' -X 'main.buildCommit=$(git rev-parse HEAD)'" main.go`
