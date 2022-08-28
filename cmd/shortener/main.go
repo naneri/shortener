@@ -17,11 +17,18 @@ import (
 	"os"
 )
 
+var (
+	buildVersion string
+	buildDate    string
+	buildCommit  string
+)
+
 var cfg config.Config
 var linkRepository link.Repository
 var db *sql.DB
 
 func main() {
+	printBuildData()
 	err := env.Parse(&cfg)
 
 	if err != nil {
@@ -93,4 +100,19 @@ func main() {
 		log.Println(http.ListenAndServe(":8087", nil))
 	}()
 	log.Println(http.ListenAndServe(cfg.ServerAddress, appRouter.GetHandler()))
+
+	os.Exit(0)
+}
+
+func printBuildData() {
+	fmt.Println(generateMessageOrNa("Build version: ", buildVersion))
+	fmt.Println(generateMessageOrNa(`Build date: `, buildDate))
+	fmt.Println(generateMessageOrNa(`Build commit: `, buildCommit))
+}
+
+func generateMessageOrNa(message string, value string) string {
+	if value == "" {
+		value = "N/A"
+	}
+	return message + value
 }
