@@ -55,10 +55,10 @@ func main() {
 		}
 
 		cfg.ServerAddress = fileConfig.ServerAddress
-		cfg.BaseURL = fileConfig.BaseUrl
+		cfg.BaseURL = fileConfig.BaseURL
 		cfg.FileStoragePath = fileConfig.FileStoragePath
 		cfg.DatabaseAddress = fileConfig.DatabaseDsn
-		cfg.EnableHttps = fileConfig.EnableHttps
+		cfg.EnableHTTPS = fileConfig.EnableHTTPS
 	}
 
 	err := env.Parse(&cfg)
@@ -73,7 +73,7 @@ func main() {
 		flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "base URL")
 		flag.StringVar(&cfg.FileStoragePath, "f", cfg.FileStoragePath, "file storage path")
 		flag.StringVar(&cfg.DatabaseAddress, "d", cfg.DatabaseAddress, "database DSN")
-		flag.BoolVar(&cfg.EnableHttps, "s", cfg.EnableHttps, "enable HTTPS")
+		flag.BoolVar(&cfg.EnableHTTPS, "s", cfg.EnableHTTPS, "enable HTTPS")
 
 	}
 
@@ -136,12 +136,11 @@ func main() {
 
 	var server *http.Server
 
-	if !cfg.EnableHttps {
+	if !cfg.EnableHTTPS {
 		server = &http.Server{
-			Addr:    ":6969",
+			Addr:    cfg.ServerAddress,
 			Handler: appRouter.GetHandler(),
 		}
-
 	} else {
 		manager := &autocert.Manager{
 			// директория для хранения сертификатов
@@ -175,7 +174,7 @@ func main() {
 		close(idleConnsClosed)
 	}()
 
-	if !cfg.EnableHttps {
+	if !cfg.EnableHTTPS {
 		if listenErr := server.ListenAndServe(); listenErr != http.ErrServerClosed {
 			// ошибки старта или остановки Listener
 			log.Fatalf("HTTP server ListenAndServe: %v", listenErr)
