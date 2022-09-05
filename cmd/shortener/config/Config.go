@@ -10,4 +10,8 @@ type Config struct {
 	FileStoragePath string `env:"FILE_STORAGE_PATH" envDefault:""`
 	// The database connection DSN
 	DatabaseAddress string `env:"DATABASE_DSN" envDefault:""`
+
+	EnableHttps bool `env:"ENABLE_HTTPS" envDefault:"false"`
+
+	FileConfig string `env:"CONFIG" envDefault:""`
 }

@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"database/sql"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/caarlos0/env/v6"
@@ -11,10 +13,13 @@ import (
 	"github.com/naneri/shortener/cmd/shortener/router"
 	"github.com/naneri/shortener/internal/app/link"
 	"github.com/naneri/shortener/internal/migrations"
+	"golang.org/x/crypto/acme/autocert"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 var (
@@ -28,7 +33,34 @@ var linkRepository link.Repository
 var db *sql.DB
 
 func main() {
+	sigint := make(chan os.Signal, 1)
+	signal.Notify(sigint, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	idleConnsClosed := make(chan struct{})
+
 	printBuildData()
+
+	if flag.Lookup("c") != nil {
+		flag.StringVar(&cfg.FileConfig, "c", cfg.FileConfig, "read config from File")
+
+		var fileConfig config.FileConfig
+		fileConfigData, readErr := os.ReadFile(cfg.FileConfig)
+		if readErr != nil {
+			log.Fatal("error reading the File config: " + readErr.Error())
+		}
+
+		unMarshalErr := json.Unmarshal(fileConfigData, &fileConfig)
+
+		if unMarshalErr != nil {
+			log.Fatal("error unmarshalling the config: " + unMarshalErr.Error())
+		}
+
+		cfg.ServerAddress = fileConfig.ServerAddress
+		cfg.BaseURL = fileConfig.BaseUrl
+		cfg.FileStoragePath = fileConfig.FileStoragePath
+		cfg.DatabaseAddress = fileConfig.DatabaseDsn
+		cfg.EnableHttps = fileConfig.EnableHttps
+	}
+
 	err := env.Parse(&cfg)
 
 	if err != nil {
@@ -41,6 +73,8 @@ func main() {
 		flag.StringVar(&cfg.BaseURL, "b", cfg.BaseURL, "base URL")
 		flag.StringVar(&cfg.FileStoragePath, "f", cfg.FileStoragePath, "file storage path")
 		flag.StringVar(&cfg.DatabaseAddress, "d", cfg.DatabaseAddress, "database DSN")
+		flag.BoolVar(&cfg.EnableHttps, "s", cfg.EnableHttps, "enable HTTPS")
+
 	}
 
 	flag.Parse()
@@ -99,9 +133,63 @@ func main() {
 	go func() {
 		log.Println(http.ListenAndServe(":8087", nil))
 	}()
-	log.Println(http.ListenAndServe(cfg.ServerAddress, appRouter.GetHandler()))
 
-	os.Exit(0)
+	var server *http.Server
+
+	if !cfg.EnableHttps {
+		server = &http.Server{
+			Addr:    ":6969",
+			Handler: appRouter.GetHandler(),
+		}
+
+	} else {
+		manager := &autocert.Manager{
+			// директория для хранения сертификатов
+			Cache: autocert.DirCache("cache-dir"),
+			// функция, принимающая Terms of Service издателя сертификатов
+			Prompt: autocert.AcceptTOS,
+			// перечень доменов, для которых будут поддерживаться сертификаты
+			HostPolicy: autocert.HostWhitelist(cfg.BaseURL),
+		}
+		// конструируем сервер с поддержкой TLS
+		server = &http.Server{
+			Addr:    ":443",
+			Handler: appRouter.GetHandler(),
+			// для TLS-конфигурации используем менеджер сертификатов
+			TLSConfig: manager.TLSConfig(),
+		}
+	}
+
+	go func() {
+		// читаем из канала прерываний
+		// поскольку нужно прочитать только одно прерывание,
+		// можно обойтись без цикла
+		<-sigint
+		// получили сигнал os.Interrupt, запускаем процедуру graceful shutdown
+		if serverShutDownErr := server.Shutdown(context.Background()); serverShutDownErr != nil {
+			// ошибки закрытия Listener
+			log.Printf("HTTP server Shutdown: %v", serverShutDownErr)
+		}
+		// сообщаем основному потоку,
+		// что все сетевые соединения обработаны и закрыты
+		close(idleConnsClosed)
+	}()
+
+	if !cfg.EnableHttps {
+		if listenErr := server.ListenAndServe(); listenErr != http.ErrServerClosed {
+			// ошибки старта или остановки Listener
+			log.Fatalf("HTTP server ListenAndServe: %v", listenErr)
+		}
+	} else {
+		if listenErr := server.ListenAndServeTLS("", ""); listenErr != http.ErrServerClosed {
+			// ошибки старта или остановки Listener
+			log.Fatalf("HTTPS server ListenAndServe: %v", listenErr)
+		}
+	}
+
+	<-idleConnsClosed
+
+	fmt.Println("Server Shutdown gracefully")
 }
 
 func printBuildData() {
