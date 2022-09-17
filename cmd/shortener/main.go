@@ -15,6 +15,7 @@ import (
 	"github.com/naneri/shortener/internal/migrations"
 	"golang.org/x/crypto/acme/autocert"
 	"log"
+	"net"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
@@ -74,10 +75,18 @@ func main() {
 		flag.StringVar(&cfg.FileStoragePath, "f", cfg.FileStoragePath, "file storage path")
 		flag.StringVar(&cfg.DatabaseAddress, "d", cfg.DatabaseAddress, "database DSN")
 		flag.BoolVar(&cfg.EnableHTTPS, "s", cfg.EnableHTTPS, "enable HTTPS")
-
+		flag.StringVar(&cfg.TrustedSubnet, "t", cfg.TrustedSubnet, "trusted Subnet")
 	}
 
 	flag.Parse()
+
+	if cfg.TrustedSubnet != "" {
+		_, _, parseErr := net.ParseCIDR(cfg.TrustedSubnet)
+
+		if parseErr != nil {
+			log.Fatal("error parsing subnet:" + parseErr.Error())
+		}
+	}
 
 	if cfg.DatabaseAddress != "" {
 		db, err = sql.Open("postgres", cfg.DatabaseAddress)

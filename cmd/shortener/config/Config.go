@@ -14,4 +14,6 @@ type Config struct {
 	EnableHTTPS bool `env:"ENABLE_HTTPS" envDefault:"false"`
 
 	FileConfig string `env:"CONFIG" envDefault:""`
+
+	TrustedSubnet string `env:"TRUSTED_SUBNET" envDefault:""`
 }
