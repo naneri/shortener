@@ -48,7 +48,7 @@ func (s *ShortenerServer) ListUserUrls(ctx context.Context, in *proto.GetUserUrl
 	if err != nil {
 		fmt.Println(err)
 	}
-	parsedUserId := uint32(u64)
+	parsedUserID := uint32(u64)
 
 	links, dbErr := s.LinkRepository.GetAllLinks()
 
@@ -57,7 +57,7 @@ func (s *ShortenerServer) ListUserUrls(ctx context.Context, in *proto.GetUserUrl
 	}
 
 	for _, userLink := range links {
-		if userLink.UserID == parsedUserId {
+		if userLink.UserID == parsedUserID {
 			protoUserLink := proto.StoredLink{
 				Id:      strconv.Itoa(userLink.ID),
 				FullUrl: userLink.URL,

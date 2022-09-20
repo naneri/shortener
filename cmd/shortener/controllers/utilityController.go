@@ -39,16 +39,16 @@ func (cont *UtilityController) Stats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	realIp := r.Header.Get("X-Real-IP")
+	realIP := r.Header.Get("X-Real-IP")
 
-	userIp := net.ParseIP(realIp)
+	userIP := net.ParseIP(realIP)
 
-	if userIp == nil {
+	if userIP == nil {
 		http.Error(w, "error - user has passed a wrong IP", http.StatusBadRequest)
 		return
 	}
 
-	if !subnet.Contains(userIp) {
+	if !subnet.Contains(userIP) {
 		http.Error(w, "access forbidden", http.StatusForbidden)
 		return
 	}
