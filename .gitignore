@@ -25,3 +25,5 @@ vendor/
 cmd/shortener/links.txt
 cmd/shortener/.env
 /cmd/shortener/swagger/docs.go
+
+*pb.go

@@ -25,6 +25,7 @@ func (router *Router) GetHandler() *chi.Mux {
 
 	utilityController := controllers.UtilityController{
 		DBConnection: router.DB,
+		Config:       router.Config,
 	}
 
 	r.Use(middleware.GzipMiddleware)
@@ -36,6 +37,7 @@ func (router *Router) GetHandler() *chi.Mux {
 	r.Delete("/api/user/urls", mainController.DeleteUserUrls)
 	r.Get("/ping", utilityController.PingDB)
 	r.Post("/api/shorten/batch", mainController.ShortenBatch)
+	r.Get("/api/internal/stats", utilityController.Stats)
 
 	return r
 }
