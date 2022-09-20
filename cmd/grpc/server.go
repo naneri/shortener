@@ -16,7 +16,7 @@ type ShortenerServer struct {
 	Config         config.Config
 }
 
-func (s *ShortenerServer) AddUrl(ctx context.Context, in *proto.AddLinkRequest) (*proto.AddLinkResponse, error) {
+func (s *ShortenerServer) AddURL(ctx context.Context, in *proto.AddLinkRequest) (*proto.AddLinkResponse, error) {
 	var response proto.AddLinkResponse
 	log.Println("request received")
 
@@ -28,7 +28,7 @@ func (s *ShortenerServer) AddUrl(ctx context.Context, in *proto.AddLinkRequest) 
 	return &response, nil
 }
 
-func (s *ShortenerServer) GetUrl(ctx context.Context, in *proto.GetLinkRequest) (*proto.GetLinkResponse, error) {
+func (s *ShortenerServer) GetURL(ctx context.Context, in *proto.GetLinkRequest) (*proto.GetLinkResponse, error) {
 	var response proto.GetLinkResponse
 
 	fullLink, err := s.LinkRepository.GetLink(in.UrlId)

@@ -25,7 +25,7 @@ func main() {
 }
 
 func TestShortener(conn proto.ShortenerServiceClient) {
-	resp, err := conn.AddUrl(context.Background(), &proto.AddLinkRequest{Link: "https://yandex.ru"})
+	resp, err := conn.AddURL(context.Background(), &proto.AddLinkRequest{Link: "https://yandex.ru"})
 
 	if err != nil {
 		log.Fatal(err)

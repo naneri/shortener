@@ -68,8 +68,8 @@ message ShortenBatchResponse {
 }
 
 service ShortenerService {
-    rpc AddUrl(AddLinkRequest) returns (AddLinkResponse);
-    rpc GetUrl(GetLinkRequest) returns (GetLinkResponse);
+    rpc AddURL(AddLinkRequest) returns (AddLinkResponse);
+    rpc GetURL(GetLinkRequest) returns (GetLinkResponse);
     rpc ListUserUrls(GetUserUrlsRequest) returns (GetUserUrlsResponse);
     rpc DeleteUserUrls(DeleteUserUrlsRequest) returns (DeleteUserUrlsResponse);
     rpc ShortenBatch(ShortenBatchRequest) returns (ShortenBatchResponse);
